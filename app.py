@@ -1031,44 +1031,19 @@ if pagina == "🏠 Inicio":
 
     with col_titulo:
 
-        st.markdown(
-            """
-            <div style="
-                text-align: center;
-                padding: 20px 0;
-            ">
+        st.title("🐾 VET-TERM")
 
-                <h1 style="
-                    margin: 0;
-                    color: #8B1E2D;
-                    font-size: 42px;
-                ">
-                    🐾 VET-TERM
-                </h1>
-
-                <h3 style="
-                    margin: 12px 0 0 0;
-                    color: #333333;
-                    font-weight: 500;
-                ">
-                    Aprende terminología médico-veterinaria jugando
-                </h3>
-
-                <p style="
-                    margin-top: 14px;
-                    color: #555555;
-                    font-size: 16px;
-                ">
-                    Facultad de Medicina Veterinaria y Zootecnia<br>
-                    Universidad Nacional San Luis Gonzaga
-                </p>
-
-            </div>
-            """,
-            unsafe_allow_html=True
+        st.subheader(
+            "Aprende terminología médico-veterinaria jugando"
         )
 
+        st.write(
+            "Facultad de Medicina Veterinaria y Zootecnia"
+        )
 
+        st.write(
+            "Universidad Nacional San Luis Gonzaga"
+        )
 # -----------------------------------------------------
 # LOGO FACULTAD
 # -----------------------------------------------------
