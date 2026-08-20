@@ -717,44 +717,43 @@ if pagina == "🏠 Inicio":
         key="nombre_input"
     )
 
-    if nombre:
+        if nombre:
 
-    nombre_limpio = nombre.strip()
+        nombre_limpio = nombre.strip()
 
-    if nombre_limpio:
+        if nombre_limpio:
 
-        estudiante = obtener_o_crear_estudiante(
-            nombre_limpio
-        )
-
-        if estudiante:
-
-            st.session_state.nombre_estudiante = (
-                estudiante["nombre"]
+            estudiante = obtener_o_crear_estudiante(
+                nombre_limpio
             )
 
-            st.session_state.estudiante_id = (
-                estudiante["id"]
-            )
+            if estudiante:
 
-            st.session_state.xp_total = (
-                estudiante["xp"]
-            )
+                st.session_state.nombre_estudiante = (
+                    estudiante["nombre"]
+                )
 
-            st.session_state.racha_maxima = (
-                estudiante["racha"]
-            )
+                st.session_state.estudiante_id = (
+                    estudiante["id"]
+                )
 
-            st.session_state.nivel_actual = (
-                estudiante["nivel"]
-            )
+                st.session_state.xp_total = (
+                    estudiante["xp"]
+                )
 
-            st.success(
-                "¡Bienvenido/a, "
-                + estudiante["nombre"]
-                + "! 🐾"
-            )
+                st.session_state.racha_maxima = (
+                    estudiante["racha"]
+                )
 
+                st.session_state.nivel_actual = (
+                    estudiante["nivel"]
+                )
+
+                st.success(
+                    "¡Bienvenido/a, "
+                    + estudiante["nombre"]
+                    + "! 🐾"
+                )
     st.divider()
 
     # -----------------------------------------------------
