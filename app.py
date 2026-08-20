@@ -3,6 +3,95 @@ import pandas as pd
 import random
 from supabase import create_client
 # =========================================================
+# AUTENTICACIÓN
+# =========================================================
+
+def obtener_usuario_actual():
+
+    try:
+
+        respuesta = supabase.auth.get_user()
+
+        if respuesta and respuesta.user:
+
+            return respuesta.user
+
+        return None
+
+    except Exception:
+
+        return None
+
+
+def iniciar_sesion_usuario(email, password):
+
+    try:
+
+        respuesta = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": password
+        })
+
+        if respuesta.user:
+
+            return respuesta.user
+
+        return None
+
+    except Exception as e:
+
+        st.error(
+            "No se pudo iniciar sesión: "
+            + str(e)
+        )
+
+        return None
+
+
+def registrar_usuario(email, password, nombre):
+
+    try:
+
+        respuesta = supabase.auth.sign_up({
+            "email": email,
+            "password": password,
+            "options": {
+                "data": {
+                    "nombre": nombre
+                }
+            }
+        })
+
+        if not respuesta.user:
+
+            st.error(
+                "No se pudo crear la cuenta."
+            )
+
+            return None
+
+        return respuesta.user
+
+    except Exception as e:
+
+        st.error(
+            "No se pudo crear la cuenta: "
+            + str(e)
+        )
+
+        return None
+
+
+def cerrar_sesion_usuario():
+
+    try:
+
+        supabase.auth.sign_out()
+
+    except Exception:
+
+        pass
+# =========================================================
 # CONEXIÓN CON SUPABASE
 # =========================================================
 
