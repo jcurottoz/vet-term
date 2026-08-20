@@ -355,7 +355,31 @@ def registrar_respuesta(
             )
 
         }).execute()
+                # -------------------------------------------------
+        # ACTUALIZAR XP ACUMULADO DEL ESTUDIANTE
+        # -------------------------------------------------
 
+        historial_xp = (
+            supabase
+            .table("respuestas")
+            .select("xp_obtenido")
+            .eq("estudiante_id", estudiante_id)
+            .execute()
+        )
+
+        xp_acumulado = sum(
+            fila.get("xp_obtenido", 0) or 0
+            for fila in historial_xp.data
+        )
+
+        supabase.table(
+            "estudiantes"
+        ).update({
+            "xp": xp_acumulado
+        }).eq(
+            "id",
+            estudiante_id
+        ).execute()
 
         # -------------------------------------------------
         # GUARDAR / ACTUALIZAR PROGRESO DEL TÉRMINO
