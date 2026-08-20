@@ -92,6 +92,39 @@ def cerrar_sesion_usuario():
 
         pass
 # =========================================================
+# OBTENER ESTUDIANTE AUTENTICADO
+# =========================================================
+
+def obtener_estudiante_por_auth(auth_user_id):
+
+    if not auth_user_id:
+        return None
+
+    try:
+
+        resultado = (
+            supabase
+            .table("estudiantes")
+            .select("*")
+            .eq("auth_user_id", auth_user_id)
+            .execute()
+        )
+
+        if resultado.data:
+
+            return resultado.data[0]
+
+        return None
+
+    except Exception as e:
+
+        st.error(
+            "No se pudo obtener el perfil del estudiante: "
+            + str(e)
+        )
+
+        return None
+# =========================================================
 # CONEXIÓN CON SUPABASE
 # =========================================================
 
@@ -760,7 +793,15 @@ def contar_terminos_refuerzo():
 if "nombre_estudiante" not in st.session_state:
 
     st.session_state.nombre_estudiante = ""
+    
+if "autenticado" not in st.session_state:
 
+    st.session_state.autenticado = False
+
+
+if "auth_user_id" not in st.session_state:
+
+    st.session_state.auth_user_id = None
 
 if "estadisticas_terminos" not in st.session_state:
 
@@ -927,58 +968,179 @@ if pagina == "🏠 Inicio":
 
     st.divider()
 
-    # -----------------------------------------------------
-    # NOMBRE
-    # -----------------------------------------------------
+# -----------------------------------------------------
+# ACCESO DEL ESTUDIANTE
+# -----------------------------------------------------
+
+if not st.session_state.autenticado:
 
     st.subheader(
-        "👤 Antes de comenzar"
+        "🔐 Acceso de estudiante"
     )
 
-    nombre = st.text_input(
-        "Escribe tu nombre:",
-        value=st.session_state.nombre_estudiante,
-        key="nombre_input"
+    modo_acceso = st.radio(
+        "Selecciona una opción:",
+        [
+            "Iniciar sesión",
+            "Crear cuenta"
+        ],
+        horizontal=True,
+        key="modo_acceso"
     )
 
-    if nombre:
+    email = st.text_input(
+        "📧 Correo electrónico",
+        key="auth_email"
+    )
 
-        nombre_limpio = nombre.strip()
+    password = st.text_input(
+        "🔑 Contraseña",
+        type="password",
+        key="auth_password"
+    )
 
-        if nombre_limpio:
+    if modo_acceso == "Crear cuenta":
 
-            estudiante = obtener_o_crear_estudiante(
-                nombre_limpio
-            )
+        nombre_nuevo = st.text_input(
+            "👤 Nombre completo",
+            key="nuevo_nombre"
+        )
 
-            if estudiante:
+        if st.button(
+            "📝 Crear cuenta",
+            type="primary"
+        ):
 
-                st.session_state.nombre_estudiante = (
-                    estudiante["nombre"]
+            if not email or not password or not nombre_nuevo:
+
+                st.warning(
+                    "Completa todos los campos."
                 )
 
-                st.session_state.estudiante_id = (
-                    estudiante["id"]
+            elif len(password) < 8:
+
+                st.warning(
+                    "La contraseña debe tener "
+                    "al menos 8 caracteres."
                 )
 
-                st.session_state.xp_total = (
-                    estudiante["xp"]
+            else:
+
+                usuario = registrar_usuario(
+                    email.strip(),
+                    password,
+                    nombre_nuevo.strip()
                 )
 
-                st.session_state.racha_maxima = (
-                    estudiante["racha"]
+                if usuario:
+
+                    st.success(
+                        "✅ Cuenta creada correctamente."
+                    )
+
+                    st.info(
+                        "📧 Revisa tu correo electrónico "
+                        "para confirmar tu cuenta. "
+                        "Después podrás iniciar sesión."
+                    )
+
+    else:
+
+        if st.button(
+            "🔐 Iniciar sesión",
+            type="primary"
+        ):
+
+            if not email or not password:
+
+                st.warning(
+                    "Ingresa tu correo y contraseña."
                 )
 
-                st.session_state.nivel_actual = (
-                    estudiante["nivel"]
+            else:
+
+                usuario = iniciar_sesion_usuario(
+                    email.strip(),
+                    password
                 )
 
-                st.success(
-                    "¡Bienvenido/a, "
-                    + estudiante["nombre"]
-                    + "! 🐾"
-                )
-    st.divider()
+                if usuario:
+
+                    st.session_state.autenticado = True
+
+                    st.session_state.auth_user_id = (
+                        usuario.id
+                    )
+
+                    estudiante = (
+                        obtener_estudiante_por_auth(
+                            usuario.id
+                        )
+                    )
+
+                    if estudiante:
+
+                        st.session_state.nombre_estudiante = (
+                            estudiante["nombre"]
+                        )
+
+                        st.session_state.estudiante_id = (
+                            estudiante["id"]
+                        )
+
+                        st.session_state.xp_total = (
+                            estudiante["xp"]
+                        )
+
+                        st.session_state.racha_maxima = (
+                            estudiante["racha"]
+                        )
+
+                        st.session_state.nivel_actual = (
+                            estudiante["nivel"]
+                        )
+
+                        st.success(
+                            "¡Bienvenido/a, "
+                            + estudiante["nombre"]
+                            + "! 🐾"
+                        )
+
+                        st.rerun()
+
+                    else:
+
+                        st.warning(
+                            "La cuenta existe, pero todavía "
+                            "no tiene un perfil de estudiante."
+                        )
+
+else:
+
+    st.subheader(
+        "👤 Perfil de estudiante"
+    )
+
+    st.success(
+        "Sesión iniciada como "
+        + st.session_state.nombre_estudiante
+        + " 🐾"
+    )
+
+    if st.button(
+        "🚪 Cerrar sesión"
+    ):
+
+        cerrar_sesion_usuario()
+
+        st.session_state.autenticado = False
+        st.session_state.auth_user_id = None
+        st.session_state.nombre_estudiante = ""
+        st.session_state.estudiante_id = None
+
+        st.rerun()
+
+st.divider()
 
     # -----------------------------------------------------
     # MODALIDADES
