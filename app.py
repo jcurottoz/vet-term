@@ -772,7 +772,11 @@ with st.sidebar:
     )
 
     st.caption(
-        "Terminología médico-veterinaria"
+    "Development | Facultad de Medicina Veterinaria y Zootecnia"
+    )
+
+st.caption(
+    "Universidad Nacional San Luis Gonzaga"
     )
 
     st.divider()
