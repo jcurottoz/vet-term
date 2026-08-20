@@ -133,7 +133,74 @@ def obtener_estadistica_termino(termino):
 # =========================================================
 # PRECISIÓN DE UN TÉRMINO
 # =========================================================
+# =========================================================
+# SUPABASE — ESTUDIANTE
+# =========================================================
 
+def obtener_o_crear_estudiante(nombre):
+
+    nombre = nombre.strip()
+
+    if not nombre:
+        return None
+
+    try:
+
+        # Buscar estudiante existente
+        resultado = (
+            supabase
+            .table("estudiantes")
+            .select("*")
+            .eq("nombre", nombre)
+            .execute()
+        )
+
+        if resultado.data:
+
+            estudiante = resultado.data[0]
+
+            return estudiante
+
+        # Si no existe, crear uno nuevo
+        nuevo_estudiante = {
+
+            "nombre": nombre,
+
+            "xp": 0,
+
+            "racha": 0,
+
+            "nivel": 1,
+
+            "preguntas_respondidas": 0,
+
+            "respuestas_correctas": 0,
+
+            "terminos_dominados": 0
+        }
+
+        resultado = (
+            supabase
+            .table("estudiantes")
+            .insert(nuevo_estudiante)
+            .execute()
+        )
+
+        if resultado.data:
+
+            return resultado.data[0]
+
+        return None
+
+    except Exception as e:
+
+        st.error(
+            "No se pudo conectar con la base "
+            "de datos: "
+            + str(e)
+        )
+
+        return None
 def porcentaje_termino(termino):
 
     datos = obtener_estadistica_termino(
@@ -652,15 +719,39 @@ if pagina == "🏠 Inicio":
 
     if nombre:
 
-        st.session_state.nombre_estudiante = (
-            nombre.strip()
+    nombre_limpio = nombre.strip()
+
+    if nombre_limpio:
+
+        estudiante = obtener_o_crear_estudiante(
+            nombre_limpio
         )
 
-        if st.session_state.nombre_estudiante:
+        if estudiante:
+
+            st.session_state.nombre_estudiante = (
+                estudiante["nombre"]
+            )
+
+            st.session_state.estudiante_id = (
+                estudiante["id"]
+            )
+
+            st.session_state.xp_total = (
+                estudiante["xp"]
+            )
+
+            st.session_state.racha_maxima = (
+                estudiante["racha"]
+            )
+
+            st.session_state.nivel_actual = (
+                estudiante["nivel"]
+            )
 
             st.success(
                 "¡Bienvenido/a, "
-                + st.session_state.nombre_estudiante
+                + estudiante["nombre"]
                 + "! 🐾"
             )
 
