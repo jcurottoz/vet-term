@@ -924,7 +924,7 @@ with st.sidebar:
     )
 
     st.caption(
-    "Development | Facultad de Medicina Veterinaria y Zootecnia"
+    "En desarrollo | Facultad de Medicina Veterinaria y Zootecnia"
     )
 
     st.caption(
