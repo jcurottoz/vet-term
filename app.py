@@ -1142,64 +1142,62 @@ else:
 
 st.divider()
 
-    # -----------------------------------------------------
-    # MODALIDADES
-    # -----------------------------------------------------
+# -----------------------------------------------------
+# MODALIDADES
+# -----------------------------------------------------
 
 col1, col2, col3 = st.columns(3)
 
-    with col1:
-
-        st.subheader(
-            "🧠 CONOCE"
-        )
-
-        st.write(
-            "Aprende términos y conceptos."
-        )
-
-    with col2:
-
-        st.subheader(
-            "🔎 IDENTIFICA"
-        )
-
-        st.write(
-            "Reconoce la terminología correcta."
-        )
-
-    with col3:
-
-        st.subheader(
-            "🩺 APLICA"
-        )
-
-        st.write(
-            "Utiliza los términos en "
-            "situaciones clínicas."
-        )
-
-    st.divider()
+with col1:
 
     st.subheader(
-        "🚀 Tu objetivo"
+        "🧠 CONOCE"
     )
 
     st.write(
-        """
-        VET-TERM no busca solamente que memorices
-        palabras.
-
-        El objetivo es que desarrolles progresivamente
-        un lenguaje técnico médico-veterinario preciso.
-        """
+        "Aprende términos y conceptos."
     )
 
-    st.info(
-        "👉 Selecciona 🎮 Jugar para comenzar."
+with col2:
+
+    st.subheader(
+        "🔎 IDENTIFICA"
     )
 
+    st.write(
+        "Reconoce la terminología correcta."
+    )
 
+with col3:
+
+    st.subheader(
+        "🩺 APLICA"
+    )
+
+    st.write(
+        "Utiliza los términos en "
+        "situaciones clínicas."
+    )
+
+st.divider()
+
+st.subheader(
+    "🚀 Tu objetivo"
+)
+
+st.write(
+    """
+    VET-TERM no busca solamente que memorices
+    palabras.
+
+    El objetivo es que desarrolles progresivamente
+    un lenguaje técnico médico-veterinario preciso.
+    """
+)
+
+st.info(
+    "👉 Selecciona 🎮 Jugar para comenzar."
+)
 # =========================================================
 # 🎮 JUGAR
 # =========================================================
