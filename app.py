@@ -951,19 +951,48 @@ with st.sidebar:
 # =========================================================
 
 if pagina == "🏠 Inicio":
+    # =====================================================
+    # IDENTIDAD INSTITUCIONAL
+    # =====================================================
 
-    st.title(
-        "🐾 VET-TERM"
+    col_logo1, col_logo2 = st.columns(2)
+
+    with col_logo1:
+
+        st.image(
+            "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM (1).jpeg",
+            width=150
+        )
+
+    with col_logo2:
+
+        st.image(
+            "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM.jpeg",
+            width=150
+        )
+
+    st.markdown(
+        "<h1 style='text-align:center;'>🐾 VET-TERM</h1>",
+        unsafe_allow_html=True
     )
 
-    st.header(
-        "Aprende terminología "
-        "médico-veterinaria jugando"
+    st.markdown(
+        """
+        <h3 style='text-align:center;'>
+        Aprende terminología médico-veterinaria jugando
+        </h3>
+        """,
+        unsafe_allow_html=True
     )
 
-    st.write(
-        "Entrena tu lenguaje técnico "
-        "desde los primeros ciclos."
+    st.markdown(
+        """
+        <p style='text-align:center;'>
+        Facultad de Medicina Veterinaria y Zootecnia<br>
+        Universidad Nacional San Luis Gonzaga
+        </p>
+        """,
+        unsafe_allow_html=True
     )
 
     st.divider()
