@@ -979,7 +979,6 @@ def logo_sin_fondo(ruta):
     pixeles = imagen.load()
 
     for y in range(imagen.height):
-
         for x in range(imagen.width):
 
             r, g, b, a = pixeles[x, y]
@@ -996,41 +995,15 @@ def logo_sin_fondo(ruta):
     return imagen
 
 
-# =========================================================
+# =====================================================
 # 🏠 INICIO
-# =========================================================
+# =====================================================
 
 if pagina == "🏠 Inicio":
 
     # =====================================================
     # IDENTIDAD INSTITUCIONAL
     # =====================================================
-
-    col_logo1, col_titulo, col_logo2 = st.columns(
-        [1, 3, 1],
-        vertical_alignment="center"
-    )
-# =====================================================
-# IDENTIDAD INSTITUCIONAL
-# =====================================================
-
-def logo_sin_fondo(ruta):
-
-    imagen = Image.open(ruta).convert("RGBA")
-
-    pixeles = imagen.load()
-
-    for y in range(imagen.height):
-        for x in range(imagen.width):
-
-            r, g, b, a = pixeles[x, y]
-
-            # Hace transparente el fondo blanco
-            if r > 235 and g > 235 and b > 235:
-                pixeles[x, y] = (255, 255, 255, 0)
-
-    return imagen
-
 
     col_logo1, col_titulo, col_logo2 = st.columns(
         [1, 4, 1],
@@ -1052,7 +1025,6 @@ def logo_sin_fondo(ruta):
             width=100
         )
 
-
     # -----------------------------------------------------
     # TÍTULO CENTRAL
     # -----------------------------------------------------
@@ -1060,24 +1032,41 @@ def logo_sin_fondo(ruta):
     with col_titulo:
 
         st.markdown(
-            "<div style='text-align:center; padding:20px 0;'>"
-            "<h1 style='margin:0; "
-            "color:#8B1E2D; font-size:42px;'>"
-            "🐾 VET-TERM"
-            "</h1>"
-            "<h3 style='margin:12px 0 0 0; "
-            "color:#333333; font-weight:500;'>"
-            "Aprende terminología médico-veterinaria jugando"
-            "</h3>"
-            "<p style='margin-top:14px; "
-            "color:#555555; font-size:16px;'>"
-            "Facultad de Medicina Veterinaria y Zootecnia<br>"
-            "Universidad Nacional San Luis Gonzaga"
-            "</p>"
-            "</div>",
+            """
+            <div style="
+                text-align:center;
+                padding:20px 0;
+            ">
+
+                <h1 style="
+                    margin:0;
+                    color:#8B1E2D;
+                    font-size:42px;
+                ">
+                    🐾 VET-TERM
+                </h1>
+
+                <h3 style="
+                    margin:12px 0 0 0;
+                    color:#333333;
+                    font-weight:500;
+                ">
+                    Aprende terminología médico-veterinaria jugando
+                </h3>
+
+                <p style="
+                    margin-top:14px;
+                    color:#555555;
+                    font-size:16px;
+                ">
+                    Facultad de Medicina Veterinaria y Zootecnia<br>
+                    Universidad Nacional San Luis Gonzaga
+                </p>
+
+            </div>
+            """,
             unsafe_allow_html=True
         )
-
 
     # -----------------------------------------------------
     # LOGO FACULTAD
@@ -1093,7 +1082,8 @@ def logo_sin_fondo(ruta):
             logo_facultad,
             width=100
         )
-st.divider()
+
+    st.divider()
 # -----------------------------------------------------
 # ACCESO DEL ESTUDIANTE
 # -----------------------------------------------------
