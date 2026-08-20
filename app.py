@@ -1,7 +1,15 @@
 import streamlit as st
 import pandas as pd
 import random
+from supabase import create_client
+# =========================================================
+# CONEXIÓN CON SUPABASE
+# =========================================================
 
+supabase = create_client(
+    st.secrets["SUPABASE_URL"],
+    st.secrets["SUPABASE_KEY"]
+)
 
 # =========================================================
 # CONFIGURACIÓN
