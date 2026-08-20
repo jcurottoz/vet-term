@@ -1058,51 +1058,26 @@ with col_logo1:
 # TÍTULO CENTRAL
 # -----------------------------------------------------
 
-with col_titulo:
+    with col_titulo:
 
-    st.markdown(
-        """
-        <div style="
-            text-align:center;
-            padding-top:10px;
-        ">
-
-            <h1 style="
-                margin-bottom:5px;
-                color:#8B1E2D;
-                font-size:42px;
-            ">
-                🐾 VET-TERM
-            </h1>
-
-            <h3 style="
-                margin-top:0;
-                color:#333333;
-                font-weight:500;
-            ">
-                Aprende terminología médico-veterinaria jugando
-            </h3>
-
-            <p style="
-                margin-top:10px;
-                color:#555555;
-                font-size:16px;
-            ">
-                Facultad de Medicina Veterinaria y Zootecnia<br>
-                Universidad Nacional San Luis Gonzaga
-            </p>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-# -----------------------------------------------------
-# LOGO FACULTAD
-# -----------------------------------------------------
-
-with col_logo2:
+        st.markdown(
+            "<div style='text-align:center; padding-top:10px;'>"
+            "<h1 style='margin-bottom:5px; "
+            "color:#8B1E2D; font-size:42px;'>"
+            "🐾 VET-TERM"
+            "</h1>"
+            "<h3 style='margin-top:0; "
+            "color:#333333; font-weight:500;'>"
+            "Aprende terminología médico-veterinaria jugando"
+            "</h3>"
+            "<p style='margin-top:10px; "
+            "color:#555555; font-size:16px;'>"
+            "Facultad de Medicina Veterinaria y Zootecnia<br>"
+            "Universidad Nacional San Luis Gonzaga"
+            "</p>"
+            "</div>",
+            unsafe_allow_html=True
+        )
 
     logo_facultad = logo_sin_fondo(
         "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM.jpeg"
@@ -1112,7 +1087,6 @@ with col_logo2:
         logo_facultad,
         width=120
     )
-
 
 st.divider()
 # -----------------------------------------------------
