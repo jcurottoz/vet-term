@@ -258,10 +258,18 @@ def dominio_termino(termino):
 # REGISTRAR RESPUESTA
 # =========================================================
 
+# =========================================================
+# REGISTRAR RESPUESTA Y GUARDAR PROGRESO
+# =========================================================
+
 def registrar_respuesta(
     termino,
     correcta
 ):
+
+    # -----------------------------------------------------
+    # ACTUALIZAR ESTADÍSTICAS LOCALES
+    # -----------------------------------------------------
 
     estadisticas = (
         st.session_state
@@ -285,6 +293,105 @@ def registrar_respuesta(
     else:
 
         estadisticas[termino]["errores"] += 1
+
+
+    # -----------------------------------------------------
+    # COMPROBAR ESTUDIANTE
+    # -----------------------------------------------------
+
+    estudiante_id = (
+        st.session_state.get(
+            "estudiante_id"
+        )
+    )
+
+    if not estudiante_id:
+
+        return
+
+
+    # -----------------------------------------------------
+    # DATOS DEL TÉRMINO
+    # -----------------------------------------------------
+
+    datos = estadisticas[termino]
+
+    intentos = datos["intentos"]
+    aciertos = datos["aciertos"]
+    errores = datos["errores"]
+
+    dominio = (
+        aciertos / intentos * 100
+        if intentos > 0
+        else 0
+    )
+
+
+    # -----------------------------------------------------
+    # GUARDAR RESPUESTA INDIVIDUAL
+    # -----------------------------------------------------
+
+    try:
+
+        supabase.table(
+            "respuestas"
+        ).insert({
+
+            "estudiante_id": estudiante_id,
+
+            "termino_id": termino,
+
+            "nivel": st.session_state.get(
+                "nivel_actual",
+                1
+            ),
+
+            "tipo": None,
+
+            "correcta": correcta,
+
+            "xp_obtenido": (
+                10 if correcta else 0
+            )
+
+        }).execute()
+
+
+        # -------------------------------------------------
+        # GUARDAR / ACTUALIZAR PROGRESO DEL TÉRMINO
+        # -------------------------------------------------
+
+        supabase.table(
+            "progreso_terminos"
+        ).upsert(
+
+            {
+                "estudiante_id": estudiante_id,
+
+                "termino_id": termino,
+
+                "correctas": aciertos,
+
+                "incorrectas": errores,
+
+                "dominio": dominio
+
+            },
+
+            on_conflict=(
+                "estudiante_id,termino_id"
+            )
+
+        ).execute()
+
+
+    except Exception as e:
+
+        st.error(
+            "No se pudo guardar el progreso "
+            "en la base de datos: "
+            + str(e)
+        )
 
 
 # =========================================================
