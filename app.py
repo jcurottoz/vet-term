@@ -1005,10 +1005,10 @@ if pagina == "🏠 Inicio":
     # IDENTIDAD INSTITUCIONAL
     # =====================================================
 
-    col_logo1, col_titulo, col_logo2 = st.columns(
-        [1, 4, 1],
-        vertical_alignment="center"
-    )
+col_logo1, col_titulo, col_logo2 = st.columns(
+    [1.2, 4, 1.2],
+    vertical_alignment="center"
+)
 
     # -----------------------------------------------------
     # LOGO UNIVERSIDAD
