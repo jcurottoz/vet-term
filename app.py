@@ -951,52 +951,114 @@ with st.sidebar:
 # =========================================================
 
 if pagina == "🏠 Inicio":
-    # =====================================================
-    # IDENTIDAD INSTITUCIONAL
-    # =====================================================
+# =====================================================
+# IDENTIDAD INSTITUCIONAL
+# =====================================================
 
-    col_logo1, col_logo2 = st.columns(2)
+from PIL import Image
 
-    with col_logo1:
 
-        st.image(
-            "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM (1).jpeg",
-            width=150
-        )
+def logo_sin_fondo(ruta):
 
-    with col_logo2:
+    imagen = Image.open(ruta).convert("RGBA")
 
-        st.image(
-            "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM.jpeg",
-            width=150
-        )
+    pixeles = imagen.load()
 
-    st.markdown(
-        "<h1 style='text-align:center;'>🐾 VET-TERM</h1>",
-        unsafe_allow_html=True
+    for y in range(imagen.height):
+        for x in range(imagen.width):
+
+            r, g, b, a = pixeles[x, y]
+
+            # Hace transparente el fondo blanco
+            if r > 235 and g > 235 and b > 235:
+                pixeles[x, y] = (255, 255, 255, 0)
+
+    return imagen
+
+
+col_logo1, col_titulo, col_logo2 = st.columns(
+    [1, 3, 1],
+    vertical_alignment="center"
+)
+
+
+# -----------------------------------------------------
+# LOGO UNIVERSIDAD
+# -----------------------------------------------------
+
+with col_logo1:
+
+    logo_unica = logo_sin_fondo(
+        "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM (1).jpeg"
     )
+
+    st.image(
+        logo_unica,
+        width=120
+    )
+
+
+# -----------------------------------------------------
+# TÍTULO CENTRAL
+# -----------------------------------------------------
+
+with col_titulo:
 
     st.markdown(
         """
-        <h3 style='text-align:center;'>
-        Aprende terminología médico-veterinaria jugando
-        </h3>
+        <div style="
+            text-align:center;
+            padding-top:10px;
+        ">
+
+            <h1 style="
+                margin-bottom:5px;
+                color:#8B1E2D;
+                font-size:42px;
+            ">
+                🐾 VET-TERM
+            </h1>
+
+            <h3 style="
+                margin-top:0;
+                color:#333333;
+                font-weight:500;
+            ">
+                Aprende terminología médico-veterinaria jugando
+            </h3>
+
+            <p style="
+                margin-top:10px;
+                color:#555555;
+                font-size:16px;
+            ">
+                Facultad de Medicina Veterinaria y Zootecnia<br>
+                Universidad Nacional San Luis Gonzaga
+            </p>
+
+        </div>
         """,
         unsafe_allow_html=True
     )
 
-    st.markdown(
-        """
-        <p style='text-align:center;'>
-        Facultad de Medicina Veterinaria y Zootecnia<br>
-        Universidad Nacional San Luis Gonzaga
-        </p>
-        """,
-        unsafe_allow_html=True
+
+# -----------------------------------------------------
+# LOGO FACULTAD
+# -----------------------------------------------------
+
+with col_logo2:
+
+    logo_facultad = logo_sin_fondo(
+        "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM.jpeg"
     )
 
-    st.divider()
+    st.image(
+        logo_facultad,
+        width=120
+    )
 
+
+st.divider()
 # -----------------------------------------------------
 # ACCESO DEL ESTUDIANTE
 # -----------------------------------------------------
