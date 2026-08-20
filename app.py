@@ -1202,7 +1202,7 @@ st.info(
 # 🎮 JUGAR
 # =========================================================
 
-elif pagina == "🎮 Jugar":
+if pagina == "🎮 Jugar":
 
     st.title(
         "🎮 Entrenamiento"
