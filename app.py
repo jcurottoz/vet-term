@@ -717,19 +717,17 @@ if pagina == "🏠 Inicio":
         key="nombre_input"
     )
 
-            if nombre:
+    if nombre:
 
-        st.session_state.nombre_estudiante = (
-            nombre.strip()
-        )
+        nombre_limpio = nombre.strip()
 
-        if st.session_state.nombre_estudiante:
+        if nombre_limpio:
 
-            st.success(
-                "¡Bienvenido/a, "
-                + st.session_state.nombre_estudiante
-                + "! 🐾"
+            estudiante = obtener_o_crear_estudiante(
+                nombre_limpio
             )
+
+            if estudiante:
 
                 st.session_state.nombre_estudiante = (
                     estudiante["nombre"]
