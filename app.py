@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import random
 
 
 # =========================================================
@@ -9,7 +10,7 @@ import pandas as pd
 st.set_page_config(
     page_title="VET-TERM",
     page_icon="🐾",
-    layout="centered"
+    layout="wide"
 )
 
 
@@ -20,20 +21,65 @@ st.set_page_config(
 @st.cache_data
 def cargar_preguntas():
 
-    datos = pd.read_csv(
+    df = pd.read_csv(
         "data/preguntas.csv",
         sep="|",
         encoding="utf-8"
     )
 
-    return datos
+    # Limpiar nombres de columnas
+    df.columns = [
+        str(col).strip()
+        for col in df.columns
+    ]
+
+    # Limpiar textos
+    columnas_texto = [
+        "modulo",
+        "categoria",
+        "tipo",
+        "termino",
+        "pregunta",
+        "opcion_a",
+        "opcion_b",
+        "opcion_c",
+        "opcion_d",
+        "respuesta",
+        "explicacion",
+        "dificultad"
+    ]
+
+    for columna in columnas_texto:
+
+        if columna in df.columns:
+
+            df[columna] = (
+                df[columna]
+                .fillna("")
+                .astype(str)
+                .str.strip()
+            )
+
+    # Asegurar que nivel sea numérico
+    df["nivel"] = pd.to_numeric(
+        df["nivel"],
+        errors="coerce"
+    )
+
+    df = df.dropna(
+        subset=["nivel"]
+    )
+
+    df["nivel"] = df["nivel"].astype(int)
+
+    return df
 
 
 preguntas = cargar_preguntas()
 
 
 # =========================================================
-# FUNCIONES
+# FUNCIONES GENERALES
 # =========================================================
 
 def obtener_nivel(xp):
@@ -54,9 +100,257 @@ def obtener_nivel(xp):
         return "🧑‍⚕️ Veterinario en formación"
 
 
-# ---------------------------------------------------------
-# INICIAR SESIÓN DE JUEGO
-# ---------------------------------------------------------
+# =========================================================
+# ESTADO DEL TÉRMINO
+# =========================================================
+
+def obtener_estadistica_termino(termino):
+
+    estadisticas = (
+        st.session_state
+        .estadisticas_terminos
+    )
+
+    if termino not in estadisticas:
+
+        return {
+            "intentos": 0,
+            "aciertos": 0,
+            "errores": 0
+        }
+
+    return estadisticas[termino]
+
+
+# =========================================================
+# PRECISIÓN DE UN TÉRMINO
+# =========================================================
+
+def porcentaje_termino(termino):
+
+    datos = obtener_estadistica_termino(
+        termino
+    )
+
+    intentos = datos["intentos"]
+
+    aciertos = datos["aciertos"]
+
+    if intentos == 0:
+        return 0.0
+
+    return (
+        aciertos / intentos
+    ) * 100
+
+
+# =========================================================
+# CLASIFICACIÓN DEL DOMINIO
+# =========================================================
+
+def dominio_termino(termino):
+
+    datos = obtener_estadistica_termino(
+        termino
+    )
+
+    intentos = datos["intentos"]
+
+    porcentaje = porcentaje_termino(
+        termino
+    )
+
+    # Todavía no ha sido evaluado
+    if intentos == 0:
+
+        return "⚪ Sin evaluar"
+
+    # Un error debe detectarse inmediatamente
+    if porcentaje < 60:
+
+        return "🔴 Reforzar"
+
+    # Entre 60 y 79 %
+    if porcentaje < 80:
+
+        return "🟡 En progreso"
+
+    # 80 % o más
+    return "🟢 Dominado"
+
+
+# =========================================================
+# REGISTRAR RESPUESTA
+# =========================================================
+
+def registrar_respuesta(
+    termino,
+    correcta
+):
+
+    estadisticas = (
+        st.session_state
+        .estadisticas_terminos
+    )
+
+    if termino not in estadisticas:
+
+        estadisticas[termino] = {
+            "intentos": 0,
+            "aciertos": 0,
+            "errores": 0
+        }
+
+    estadisticas[termino]["intentos"] += 1
+
+    if correcta:
+
+        estadisticas[termino]["aciertos"] += 1
+
+    else:
+
+        estadisticas[termino]["errores"] += 1
+
+
+# =========================================================
+# PESO ADAPTATIVO
+# =========================================================
+
+def calcular_peso_termino(termino):
+
+    datos = obtener_estadistica_termino(
+        termino
+    )
+
+    intentos = datos["intentos"]
+
+    aciertos = datos["aciertos"]
+
+    errores = datos["errores"]
+
+    # -----------------------------------------------------
+    # TÉRMINO NUEVO
+    # -----------------------------------------------------
+
+    if intentos == 0:
+
+        return 3.0
+
+    precision = (
+        aciertos / intentos
+    ) * 100
+
+    # -----------------------------------------------------
+    # TÉRMINO CON ERRORES
+    # -----------------------------------------------------
+
+    if precision < 40:
+
+        return 10.0
+
+    elif precision < 60:
+
+        return 8.0
+
+    elif precision < 80:
+
+        return 5.0
+
+    elif precision < 90:
+
+        return 2.5
+
+    else:
+
+        return 1.0
+
+
+# =========================================================
+# SELECCIÓN ADAPTATIVA
+# =========================================================
+
+def seleccionar_preguntas_adaptativas(
+    banco,
+    cantidad=10
+):
+
+    banco = banco.copy()
+
+    cantidad = min(
+        cantidad,
+        len(banco)
+    )
+
+    seleccionadas = []
+
+    # -----------------------------------------------------
+    # SELECCIONAR UNA POR UNA
+    #
+    # No utilizamos pandas.sample(weights=...)
+    # para evitar el error que teníamos en Nivel 2.
+    # -----------------------------------------------------
+
+    while (
+        len(seleccionadas) < cantidad
+        and len(banco) > 0
+    ):
+
+        pesos = []
+
+        for _, fila in banco.iterrows():
+
+            termino = fila["termino"]
+
+            peso = calcular_peso_termino(
+                termino
+            )
+
+            # Pequeña variación aleatoria para
+            # evitar que siempre aparezca exactamente
+            # la misma secuencia.
+            peso *= random.uniform(
+                0.90,
+                1.10
+            )
+
+            pesos.append(
+                max(peso, 0.1)
+            )
+
+        indices = list(
+            range(len(banco))
+        )
+
+        indice_elegido = random.choices(
+            indices,
+            weights=pesos,
+            k=1
+        )[0]
+
+        fila_elegida = banco.iloc[
+            indice_elegido
+        ]
+
+        seleccionadas.append(
+            fila_elegida.to_dict()
+        )
+
+        # Eliminar pregunta para evitar
+        # repetirla dentro de la misma sesión
+        banco = banco.drop(
+            banco.index[indice_elegido]
+        )
+
+        banco = banco.reset_index(
+            drop=True
+        )
+
+    return seleccionadas
+
+
+# =========================================================
+# INICIAR SESIÓN
+# =========================================================
 
 def iniciar_sesion(nivel):
 
@@ -64,70 +358,35 @@ def iniciar_sesion(nivel):
         preguntas["nivel"] == nivel
     ].copy()
 
+    # -----------------------------------------------------
+    # COMPROBAR PREGUNTAS
+    # -----------------------------------------------------
+
     if banco.empty:
+
         st.error(
-            "No hay preguntas disponibles para este nivel."
+            f"No existen preguntas para el nivel {nivel}."
         )
-        return
+
+        return False
 
     # -----------------------------------------------------
     # SELECCIÓN ADAPTATIVA
     # -----------------------------------------------------
 
-    estadisticas = st.session_state.get(
-        "estadisticas_terminos",
-        {}
+    seleccion = (
+        seleccionar_preguntas_adaptativas(
+            banco,
+            cantidad=10
+        )
     )
 
-    if estadisticas:
-
-        def calcular_peso(fila):
-
-            termino = fila["termino"]
-
-            if termino not in estadisticas:
-                return 5
-
-            datos = estadisticas[termino]
-
-            intentos = datos.get("intentos", 0)
-            aciertos = datos.get("aciertos", 0)
-
-            if intentos == 0:
-                return 5
-
-            precision = aciertos / intentos
-
-            # Los términos con menor precisión
-            # tienen mayor probabilidad de aparecer.
-            peso = int(
-                (1 - precision) * 10
-            )
-
-            return max(1, peso)
-
-        pesos = banco.apply(
-            calcular_peso,
-            axis=1
-        )
-
-        seleccion = banco.sample(
-            n=min(10, len(banco)),
-            weights=pesos
-        )
-
-    else:
-
-        seleccion = banco.sample(
-            n=min(10, len(banco))
-        )
-
     # -----------------------------------------------------
-    # REINICIAR ESTADO DE LA SESIÓN
+    # GUARDAR SESIÓN
     # -----------------------------------------------------
 
     st.session_state.preguntas_sesion = (
-        seleccion.to_dict("records")
+        seleccion
     )
 
     st.session_state.pregunta_actual = 0
@@ -138,6 +397,8 @@ def iniciar_sesion(nivel):
 
     st.session_state.correctas_sesion = 0
 
+    st.session_state.errores_sesion = 0
+
     st.session_state.respondida = False
 
     st.session_state.finalizado = False
@@ -146,142 +407,51 @@ def iniciar_sesion(nivel):
 
     st.session_state.nivel_actual = nivel
 
-
-# ---------------------------------------------------------
-# REGISTRAR RESPUESTA
-# ---------------------------------------------------------
-
-def registrar_respuesta(
-    termino,
-    correcta
-):
-
-    if "estadisticas_terminos" not in st.session_state:
-
-        st.session_state.estadisticas_terminos = {}
-
-    estadisticas = (
-        st.session_state.estadisticas_terminos
-    )
-
-    if termino not in estadisticas:
-
-        estadisticas[termino] = {
-            "intentos": 0,
-            "aciertos": 0
-        }
-
-    estadisticas[termino]["intentos"] += 1
-
-    if correcta:
-
-        estadisticas[termino]["aciertos"] += 1
+    return True
 
 
-# ---------------------------------------------------------
-# PORCENTAJE DE DOMINIO
-# ---------------------------------------------------------
-
-def porcentaje_termino(termino):
-
-    estadisticas = (
-        st.session_state.get(
-            "estadisticas_terminos",
-            {}
-        )
-    )
-
-    datos = estadisticas.get(
-        termino,
-        {
-            "intentos": 0,
-            "aciertos": 0
-        }
-    )
-
-    intentos = datos.get(
-        "intentos",
-        0
-    )
-
-    aciertos = datos.get(
-        "aciertos",
-        0
-    )
-
-    if intentos == 0:
-        return 0
-
-    return (
-        aciertos / intentos
-    ) * 100
-
-
-# ---------------------------------------------------------
-# ESTADO DE DOMINIO
-# ---------------------------------------------------------
-
-def dominio_termino(termino):
-
-    porcentaje = porcentaje_termino(
-        termino
-    )
-
-    estadisticas = (
-        st.session_state.get(
-            "estadisticas_terminos",
-            {}
-        )
-    )
-
-    datos = estadisticas.get(
-        termino,
-        {}
-    )
-
-    intentos = datos.get(
-        "intentos",
-        0
-    )
-
-    if intentos < 2:
-
-        return "⚪ Sin evaluar"
-
-    elif porcentaje >= 80:
-
-        return "🟢 Dominado"
-
-    elif porcentaje >= 60:
-
-        return "🟡 En progreso"
-
-    else:
-
-        return "🔴 Reforzar"
-
-
-# ---------------------------------------------------------
+# =========================================================
 # CONTAR TÉRMINOS DOMINADOS
-# ---------------------------------------------------------
+# =========================================================
 
 def contar_terminos_dominados():
 
     estadisticas = (
-        st.session_state.get(
-            "estadisticas_terminos",
-            {}
-        )
+        st.session_state
+        .estadisticas_terminos
     )
 
     total = 0
 
     for termino in estadisticas:
 
-        if (
-            dominio_termino(termino)
-            == "🟢 Dominado"
-        ):
+        if dominio_termino(
+            termino
+        ) == "🟢 Dominado":
+
+            total += 1
+
+    return total
+
+
+# =========================================================
+# CONTAR TÉRMINOS QUE NECESITAN REFUERZO
+# =========================================================
+
+def contar_terminos_refuerzo():
+
+    estadisticas = (
+        st.session_state
+        .estadisticas_terminos
+    )
+
+    total = 0
+
+    for termino in estadisticas:
+
+        if dominio_termino(
+            termino
+        ) == "🔴 Reforzar":
 
             total += 1
 
@@ -292,45 +462,20 @@ def contar_terminos_dominados():
 # INICIALIZAR SESSION STATE
 # =========================================================
 
-# ---------------------------------------------------------
-# DATOS DEL ESTUDIANTE
-# ---------------------------------------------------------
-
 if "nombre_estudiante" not in st.session_state:
 
     st.session_state.nombre_estudiante = ""
 
-
-# ---------------------------------------------------------
-# ESTADÍSTICAS DE TÉRMINOS
-# ---------------------------------------------------------
 
 if "estadisticas_terminos" not in st.session_state:
 
     st.session_state.estadisticas_terminos = {}
 
 
-# ---------------------------------------------------------
-# XP TOTAL
-# ---------------------------------------------------------
-
 if "xp_total" not in st.session_state:
 
     st.session_state.xp_total = 0
 
-
-# ---------------------------------------------------------
-# RACHA MÁXIMA
-# ---------------------------------------------------------
-
-if "racha_maxima" not in st.session_state:
-
-    st.session_state.racha_maxima = 0
-
-
-# ---------------------------------------------------------
-# ESTADÍSTICAS DE SESIÓN
-# ---------------------------------------------------------
 
 if "xp_sesion" not in st.session_state:
 
@@ -342,14 +487,20 @@ if "racha" not in st.session_state:
     st.session_state.racha = 0
 
 
+if "racha_maxima" not in st.session_state:
+
+    st.session_state.racha_maxima = 0
+
+
 if "correctas_sesion" not in st.session_state:
 
     st.session_state.correctas_sesion = 0
 
 
-# ---------------------------------------------------------
-# CONTROL DE PREGUNTAS
-# ---------------------------------------------------------
+if "errores_sesion" not in st.session_state:
+
+    st.session_state.errores_sesion = 0
+
 
 if "pregunta_actual" not in st.session_state:
 
@@ -376,13 +527,32 @@ if "nivel_actual" not in st.session_state:
     st.session_state.nivel_actual = 1
 
 
-# ---------------------------------------------------------
+if "nivel_seleccionado" not in st.session_state:
+
+    st.session_state.nivel_seleccionado = 1
+
+
+# =========================================================
 # CREAR PRIMERA SESIÓN
-# ---------------------------------------------------------
+# =========================================================
 
 if "preguntas_sesion" not in st.session_state:
 
     iniciar_sesion(1)
+
+
+# =========================================================
+# NOMBRES DE NIVELES
+# =========================================================
+
+nombres_niveles = {
+
+    1: "🐣 Nivel 1 — Lenguaje veterinario básico",
+
+    2: "🐾 Nivel 2 — Anatomía veterinaria",
+
+    3: "🩺 Nivel 3 — Semiología"
+}
 
 
 # =========================================================
@@ -391,7 +561,9 @@ if "preguntas_sesion" not in st.session_state:
 
 with st.sidebar:
 
-    st.title("🐾 VET-TERM")
+    st.title(
+        "🐾 VET-TERM"
+    )
 
     st.caption(
         "Terminología médico-veterinaria"
@@ -411,20 +583,12 @@ with st.sidebar:
 
     st.divider()
 
-    # -----------------------------------------------------
-    # ESTUDIANTE
-    # -----------------------------------------------------
-
     if st.session_state.nombre_estudiante:
 
         st.write(
             "👋 "
             + st.session_state.nombre_estudiante
         )
-
-    # -----------------------------------------------------
-    # ESTADÍSTICAS
-    # -----------------------------------------------------
 
     st.metric(
         "⭐ XP",
@@ -436,6 +600,11 @@ with st.sidebar:
         st.session_state.racha_maxima
     )
 
+    st.metric(
+        "🧠 Dominados",
+        contar_terminos_dominados()
+    )
+
 
 # =========================================================
 # 🏠 INICIO
@@ -443,7 +612,9 @@ with st.sidebar:
 
 if pagina == "🏠 Inicio":
 
-    st.title("🐾 VET-TERM")
+    st.title(
+        "🐾 VET-TERM"
+    )
 
     st.header(
         "Aprende terminología "
@@ -458,7 +629,7 @@ if pagina == "🏠 Inicio":
     st.divider()
 
     # -----------------------------------------------------
-    # NOMBRE DEL ESTUDIANTE
+    # NOMBRE
     # -----------------------------------------------------
 
     st.subheader(
@@ -467,28 +638,37 @@ if pagina == "🏠 Inicio":
 
     nombre = st.text_input(
         "Escribe tu nombre:",
-        value=st.session_state.nombre_estudiante
+        value=st.session_state.nombre_estudiante,
+        key="nombre_input"
     )
 
     if nombre:
 
-        st.session_state.nombre_estudiante = nombre
-
-        st.success(
-            f"¡Bienvenido/a, {nombre}! 🐾"
+        st.session_state.nombre_estudiante = (
+            nombre.strip()
         )
+
+        if st.session_state.nombre_estudiante:
+
+            st.success(
+                "¡Bienvenido/a, "
+                + st.session_state.nombre_estudiante
+                + "! 🐾"
+            )
 
     st.divider()
 
     # -----------------------------------------------------
-    # TRES MODALIDADES
+    # MODALIDADES
     # -----------------------------------------------------
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
 
-        st.subheader("🧠 CONOCE")
+        st.subheader(
+            "🧠 CONOCE"
+        )
 
         st.write(
             "Aprende términos y conceptos."
@@ -496,7 +676,9 @@ if pagina == "🏠 Inicio":
 
     with col2:
 
-        st.subheader("🔎 IDENTIFICA")
+        st.subheader(
+            "🔎 IDENTIFICA"
+        )
 
         st.write(
             "Reconoce la terminología correcta."
@@ -504,11 +686,13 @@ if pagina == "🏠 Inicio":
 
     with col3:
 
-        st.subheader("🩺 APLICA")
+        st.subheader(
+            "🩺 APLICA"
+        )
 
         st.write(
-            "Utiliza los términos "
-            "en situaciones clínicas."
+            "Utiliza los términos en "
+            "situaciones clínicas."
         )
 
     st.divider()
@@ -519,16 +703,16 @@ if pagina == "🏠 Inicio":
 
     st.write(
         """
-        No se trata solamente de memorizar palabras.
+        VET-TERM no busca solamente que memorices
+        palabras.
 
-        VET-TERM busca que aprendas a utilizar
-        la terminología veterinaria de manera
-        precisa y profesional.
+        El objetivo es que desarrolles progresivamente
+        un lenguaje técnico médico-veterinario preciso.
         """
     )
 
     st.info(
-        "👉 Selecciona '🎮 Jugar' para comenzar."
+        "👉 Selecciona 🎮 Jugar para comenzar."
     )
 
 
@@ -538,10 +722,12 @@ if pagina == "🏠 Inicio":
 
 elif pagina == "🎮 Jugar":
 
-    st.title("🎮 Entrenamiento")
+    st.title(
+        "🎮 Entrenamiento"
+    )
 
     # -----------------------------------------------------
-    # VERIFICAR NOMBRE
+    # NOMBRE
     # -----------------------------------------------------
 
     if not st.session_state.nombre_estudiante:
@@ -560,51 +746,79 @@ elif pagina == "🎮 Jugar":
     )
 
     # -----------------------------------------------------
-    # SELECCIONAR NIVEL
+    # SELECCIÓN DEL NIVEL
     # -----------------------------------------------------
 
-    niveles = sorted(
+    niveles_disponibles = sorted(
         preguntas["nivel"]
         .unique()
         .tolist()
     )
 
-    nombres_niveles = {
+    nombres_disponibles = []
 
-        1: "🐣 Nivel 1 — Lenguaje veterinario básico",
-
-        2: "🐾 Nivel 2 — Anatomía veterinaria",
-
-        3: "🩺 Nivel 3 — Semiología"
-    }
-
-    opciones_nivel = []
-
-    for nivel in niveles:
+    for nivel in niveles_disponibles:
 
         if nivel in nombres_niveles:
 
-            opciones_nivel.append(
+            nombres_disponibles.append(
                 nombres_niveles[nivel]
             )
 
-    nivel_nombre = st.selectbox(
-        "Selecciona tu nivel:",
-        opciones_nivel
+    nivel_actual_nombre = nombres_niveles.get(
+        st.session_state.nivel_seleccionado,
+        nombres_disponibles[0]
     )
 
-    # Obtener número del nivel
+    indice_inicial = 0
+
+    if nivel_actual_nombre in nombres_disponibles:
+
+        indice_inicial = (
+            nombres_disponibles.index(
+                nivel_actual_nombre
+            )
+        )
+
+    nivel_nombre = st.selectbox(
+        "Selecciona tu nivel:",
+        nombres_disponibles,
+        index=indice_inicial,
+        key="selector_nivel"
+    )
+
+    # -----------------------------------------------------
+    # CONVERTIR NOMBRE A NÚMERO
+    # -----------------------------------------------------
+
     nivel = None
 
-    for numero_nivel, nombre_nivel in nombres_niveles.items():
+    for numero, nombre_nivel in nombres_niveles.items():
 
         if nombre_nivel == nivel_nombre:
 
-            nivel = numero_nivel
+            nivel = numero
+
             break
 
+    # Guardar nivel seleccionado
+    st.session_state.nivel_seleccionado = nivel
+
     # -----------------------------------------------------
-    # NUEVA SESIÓN
+    # INFORMACIÓN DEL NIVEL
+    # -----------------------------------------------------
+
+    banco_nivel = preguntas[
+        preguntas["nivel"] == nivel
+    ]
+
+    st.caption(
+        f"📚 Este nivel contiene "
+        f"{len(banco_nivel)} preguntas disponibles."
+    )
+
+    # -----------------------------------------------------
+    # BOTÓN NUEVA SESIÓN
     # -----------------------------------------------------
 
     if st.button(
@@ -612,9 +826,13 @@ elif pagina == "🎮 Jugar":
         type="secondary"
     ):
 
-        iniciar_sesion(nivel)
+        exito = iniciar_sesion(
+            nivel
+        )
 
-        st.rerun()
+        if exito:
+
+            st.rerun()
 
     st.divider()
 
@@ -636,6 +854,14 @@ elif pagina == "🎮 Jugar":
         # SEGURIDAD
         # -------------------------------------------------
 
+        if total == 0:
+
+            st.error(
+                "No hay preguntas disponibles."
+            )
+
+            st.stop()
+
         if numero >= total:
 
             st.session_state.finalizado = True
@@ -648,7 +874,7 @@ elif pagina == "🎮 Jugar":
         )
 
         # -------------------------------------------------
-        # BARRA DE PROGRESO
+        # PROGRESO
         # -------------------------------------------------
 
         st.progress(
@@ -660,10 +886,10 @@ elif pagina == "🎮 Jugar":
         )
 
         # -------------------------------------------------
-        # TIPO DE PREGUNTA
+        # TIPO
         # -------------------------------------------------
 
-        tipo = pregunta["tipo"]
+        tipo = pregunta["tipo"].upper()
 
         if tipo == "CONOCE":
 
@@ -677,11 +903,26 @@ elif pagina == "🎮 Jugar":
                 "🔎 IDENTIFICA"
             )
 
-        else:
+        elif tipo == "APLICA":
 
             st.success(
                 "🩺 APLICA"
             )
+
+        else:
+
+            st.info(
+                "📚 ENTRENAMIENTO"
+            )
+
+        # -------------------------------------------------
+        # TÉRMINO
+        # -------------------------------------------------
+
+        st.caption(
+            "Término objetivo: "
+            + pregunta["termino"]
+        )
 
         # -------------------------------------------------
         # PREGUNTA
@@ -691,7 +932,7 @@ elif pagina == "🎮 Jugar":
             pregunta["pregunta"]
         )
 
-        opciones_respuesta = [
+        opciones = [
 
             pregunta["opcion_a"],
 
@@ -704,13 +945,13 @@ elif pagina == "🎮 Jugar":
 
         respuesta = st.radio(
             "Selecciona una respuesta:",
-            opciones_respuesta,
+            opciones,
             key=f"respuesta_{numero}",
             disabled=st.session_state.respondida
         )
 
         # =================================================
-        # COMPROBAR RESPUESTA
+        # COMPROBAR
         # =================================================
 
         if not st.session_state.respondida:
@@ -725,13 +966,19 @@ elif pagina == "🎮 Jugar":
                     == pregunta["respuesta"]
                 )
 
-                # Registrar término
+                # -----------------------------------------
+                # REGISTRAR
+                # -----------------------------------------
+
                 registrar_respuesta(
                     pregunta["termino"],
                     correcta
                 )
 
-                # Guardar respuesta
+                # -----------------------------------------
+                # GUARDAR RESPUESTA
+                # -----------------------------------------
+
                 st.session_state.respuesta_actual = (
                     respuesta
                 )
@@ -739,7 +986,7 @@ elif pagina == "🎮 Jugar":
                 st.session_state.respondida = True
 
                 # -----------------------------------------
-                # RESPUESTA CORRECTA
+                # CORRECTA
                 # -----------------------------------------
 
                 if correcta:
@@ -752,8 +999,6 @@ elif pagina == "🎮 Jugar":
 
                     st.session_state.correctas_sesion += 1
 
-                    # Actualizar récord de racha
-
                     if (
                         st.session_state.racha
                         > st.session_state.racha_maxima
@@ -764,17 +1009,19 @@ elif pagina == "🎮 Jugar":
                         )
 
                 # -----------------------------------------
-                # RESPUESTA INCORRECTA
+                # INCORRECTA
                 # -----------------------------------------
 
                 else:
 
                     st.session_state.racha = 0
 
+                    st.session_state.errores_sesion += 1
+
                 st.rerun()
 
         # =================================================
-        # MOSTRAR RESULTADO
+        # RESULTADO
         # =================================================
 
         else:
@@ -797,10 +1044,8 @@ elif pagina == "🎮 Jugar":
                 )
 
                 st.write(
-                    "Respuesta correcta: "
-                    + "**"
+                    "**Respuesta correcta:** "
                     + pregunta["respuesta"]
-                    + "**"
                 )
 
             # -------------------------------------------------
@@ -813,21 +1058,31 @@ elif pagina == "🎮 Jugar":
             )
 
             # -------------------------------------------------
-            # DOMINIO DEL TÉRMINO
+            # ESTADO DEL TÉRMINO
             # -------------------------------------------------
 
+            termino = pregunta["termino"]
+
             porcentaje = porcentaje_termino(
-                pregunta["termino"]
+                termino
             )
 
             estado = dominio_termino(
-                pregunta["termino"]
+                termino
+            )
+
+            datos = obtener_estadistica_termino(
+                termino
             )
 
             st.write(
-                "🧠 **Dominio de "
-                + pregunta["termino"]
-                + ":** "
+                "### 🧠 Estado del término"
+            )
+
+            st.write(
+                "**"
+                + termino
+                + "** — "
                 + estado
             )
 
@@ -836,8 +1091,40 @@ elif pagina == "🎮 Jugar":
             )
 
             st.caption(
+                f"Intentos: {datos['intentos']} | "
+                f"Aciertos: {datos['aciertos']} | "
+                f"Errores: {datos['errores']} | "
                 f"Precisión: {porcentaje:.0f}%"
             )
+
+            # -------------------------------------------------
+            # MENSAJE ADAPTATIVO
+            # -------------------------------------------------
+
+            if estado == "🔴 Reforzar":
+
+                st.warning(
+                    "📚 Este término necesita "
+                    "refuerzo. Volverá a aparecer "
+                    "con mayor frecuencia."
+                )
+
+            elif estado == "🟡 En progreso":
+
+                st.info(
+                    "👍 Vas progresando. "
+                    "Continúa practicando este término."
+                )
+
+            elif estado == "🟢 Dominado":
+
+                st.success(
+                    "🏆 ¡Término dominado!"
+                )
+
+            # -------------------------------------------------
+            # INFORMACIÓN
+            # -------------------------------------------------
 
             st.caption(
                 "📚 Módulo: "
@@ -858,7 +1145,10 @@ elif pagina == "🎮 Jugar":
                 type="primary"
             ):
 
-                if numero + 1 >= total:
+                if (
+                    numero + 1
+                    >= total
+                ):
 
                     st.session_state.finalizado = True
 
@@ -873,7 +1163,7 @@ elif pagina == "🎮 Jugar":
                 st.rerun()
 
     # =====================================================
-    # SESIÓN COMPLETADA
+    # SESIÓN TERMINADA
     # =====================================================
 
     else:
@@ -892,6 +1182,10 @@ elif pagina == "🎮 Jugar":
             st.session_state.correctas_sesion
         )
 
+        errores = (
+            st.session_state.errores_sesion
+        )
+
         if total > 0:
 
             porcentaje = (
@@ -903,10 +1197,10 @@ elif pagina == "🎮 Jugar":
             porcentaje = 0
 
         # -------------------------------------------------
-        # RESUMEN
+        # RESULTADOS
         # -------------------------------------------------
 
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
 
@@ -919,10 +1213,17 @@ elif pagina == "🎮 Jugar":
 
             st.metric(
                 "✅ Correctas",
-                f"{correctas}/{total}"
+                correctas
             )
 
         with col3:
+
+            st.metric(
+                "❌ Errores",
+                errores
+            )
+
+        with col4:
 
             st.metric(
                 "📊 Rendimiento",
@@ -932,44 +1233,15 @@ elif pagina == "🎮 Jugar":
         st.divider()
 
         # -------------------------------------------------
-        # NIVEL
-        # -------------------------------------------------
-
-        st.subheader(
-            "🏆 Tu nivel"
-        )
-
-        st.success(
-            obtener_nivel(
-                st.session_state.xp_total
-            )
-        )
-
-        # -------------------------------------------------
-        # TÉRMINOS DOMINADOS
-        # -------------------------------------------------
-
-        dominados = (
-            contar_terminos_dominados()
-        )
-
-        st.subheader(
-            "🧠 Tu dominio"
-        )
-
-        st.write(
-            f"Has dominado **{dominados} términos**."
-        )
-
-        # -------------------------------------------------
-        # MENSAJE
+        # INTERPRETACIÓN
         # -------------------------------------------------
 
         if porcentaje >= 90:
 
             st.success(
-                "🏅 Excelente rendimiento. "
-                "¡Tu dominio terminológico está avanzando!"
+                "🏆 Excelente rendimiento. "
+                "Tu dominio terminológico está "
+                "avanzando muy bien."
             )
 
         elif porcentaje >= 70:
@@ -979,12 +1251,59 @@ elif pagina == "🎮 Jugar":
                 "Continúa entrenando."
             )
 
-        else:
+        elif porcentaje >= 50:
 
             st.warning(
-                "📚 Algunos conceptos necesitan "
-                "mayor refuerzo."
+                "📚 Rendimiento intermedio. "
+                "Hay términos que necesitan refuerzo."
             )
+
+        else:
+
+            st.error(
+                "🔴 Necesitas reforzar varios "
+                "conceptos. No te preocupes: "
+                "VET-TERM los volverá a presentar."
+            )
+
+        st.divider()
+
+        # -------------------------------------------------
+        # PROGRESO GLOBAL
+        # -------------------------------------------------
+
+        st.subheader(
+            "🏆 Tu progreso global"
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            st.metric(
+                "⭐ XP total",
+                st.session_state.xp_total
+            )
+
+        with col2:
+
+            st.metric(
+                "🧠 Términos dominados",
+                contar_terminos_dominados()
+            )
+
+        with col3:
+
+            st.metric(
+                "🔴 Para reforzar",
+                contar_terminos_refuerzo()
+            )
+
+        st.success(
+            obtener_nivel(
+                st.session_state.xp_total
+            )
+        )
 
         st.divider()
 
@@ -1015,41 +1334,82 @@ elif pagina == "📚 Banco de términos":
     )
 
     st.write(
-        "Explora y revisa los conceptos "
-        "incluidos en VET-TERM."
+        "Explora los conceptos disponibles "
+        "en VET-TERM."
     )
 
     st.divider()
 
     # -----------------------------------------------------
-    # FILTRO POR MÓDULO
+    # FILTRO DE NIVEL
     # -----------------------------------------------------
 
-    modulos = [
-        "Todos"
-    ] + sorted(
-        preguntas["modulo"]
+    niveles = sorted(
+        preguntas["nivel"]
         .unique()
         .tolist()
     )
 
-    modulo = st.selectbox(
-        "Filtrar por módulo:",
-        modulos
+    opciones_nivel = [
+        "Todos"
+    ]
+
+    for nivel in niveles:
+
+        if nivel in nombres_niveles:
+
+            opciones_nivel.append(
+                nombres_niveles[nivel]
+            )
+
+    filtro_nivel = st.selectbox(
+        "🎯 Nivel:",
+        opciones_nivel
     )
 
-    if modulo == "Todos":
+    if filtro_nivel == "Todos":
 
         banco = preguntas.copy()
 
     else:
 
+        nivel_filtro = None
+
+        for numero, nombre_nivel in nombres_niveles.items():
+
+            if nombre_nivel == filtro_nivel:
+
+                nivel_filtro = numero
+
         banco = preguntas[
-            preguntas["modulo"] == modulo
+            preguntas["nivel"] == nivel_filtro
         ].copy()
 
     # -----------------------------------------------------
-    # TÉRMINOS ÚNICOS
+    # FILTRO DE MÓDULO
+    # -----------------------------------------------------
+
+    modulos = [
+        "Todos"
+    ] + sorted(
+        banco["modulo"]
+        .unique()
+        .tolist()
+    )
+
+    modulo = st.selectbox(
+        "📚 Módulo:",
+        modulos
+    )
+
+    if modulo != "Todos":
+
+        banco = banco[
+            banco["modulo"] == modulo
+        ]
+
+    # -----------------------------------------------------
+    # LISTA DE TÉRMINOS
     # -----------------------------------------------------
 
     terminos = sorted(
@@ -1061,10 +1421,6 @@ elif pagina == "📚 Banco de términos":
     st.caption(
         f"{len(terminos)} términos disponibles"
     )
-
-    # -----------------------------------------------------
-    # MOSTRAR TÉRMINOS
-    # -----------------------------------------------------
 
     for termino in terminos:
 
@@ -1082,13 +1438,18 @@ elif pagina == "📚 Banco de términos":
             )
 
             st.write(
+                "**Categoría:** "
+                + fila["categoria"]
+            )
+
+            st.write(
                 "**Nivel:** "
                 + str(fila["nivel"])
             )
 
             st.write(
-                "**Categoría:** "
-                + fila["categoria"]
+                "**Tipo:** "
+                + fila["tipo"]
             )
 
             st.write(
@@ -1097,25 +1458,22 @@ elif pagina == "📚 Banco de términos":
             )
 
             # ---------------------------------------------
-            # PROGRESO
+            # ESTADÍSTICA
             # ---------------------------------------------
 
-            estadisticas = (
-                st.session_state
-                .estadisticas_terminos
+            datos = obtener_estadistica_termino(
+                termino
             )
 
-            if termino in estadisticas:
+            if datos["intentos"] > 0:
 
-                st.write(
-                    "**Dominio actual:** "
-                    + dominio_termino(
-                        termino
-                    )
+                porcentaje = porcentaje_termino(
+                    termino
                 )
 
-                porcentaje = (
-                    porcentaje_termino(
+                st.write(
+                    "**Tu dominio:** "
+                    + dominio_termino(
                         termino
                     )
                 )
@@ -1125,6 +1483,8 @@ elif pagina == "📚 Banco de términos":
                 )
 
                 st.caption(
+                    f"Intentos: {datos['intentos']} | "
+                    f"Aciertos: {datos['aciertos']} | "
                     f"Precisión: {porcentaje:.0f}%"
                 )
 
@@ -1146,15 +1506,11 @@ elif pagina == "🏆 Mi progreso":
         "🏆 Mi progreso"
     )
 
-    # -----------------------------------------------------
-    # NOMBRE
-    # -----------------------------------------------------
-
     if not st.session_state.nombre_estudiante:
 
         st.info(
             "Escribe primero tu nombre "
-            "en la página de Inicio."
+            "en Inicio."
         )
 
     else:
@@ -1164,11 +1520,13 @@ elif pagina == "🏆 Mi progreso":
             + st.session_state.nombre_estudiante
         )
 
+        st.divider()
+
         # -------------------------------------------------
         # INDICADORES
         # -------------------------------------------------
 
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
 
@@ -1187,8 +1545,15 @@ elif pagina == "🏆 Mi progreso":
         with col3:
 
             st.metric(
-                "🧠 Dominados",
+                "🟢 Dominados",
                 contar_terminos_dominados()
+            )
+
+        with col4:
+
+            st.metric(
+                "🔴 Reforzar",
+                contar_terminos_refuerzo()
             )
 
         st.divider()
@@ -1210,11 +1575,11 @@ elif pagina == "🏆 Mi progreso":
         st.divider()
 
         # -------------------------------------------------
-        # DOMINIO POR TÉRMINO
+        # DOMINIO DE TÉRMINOS
         # -------------------------------------------------
 
         st.subheader(
-            "📊 Dominio por término"
+            "🧠 Dominio de terminología"
         )
 
         estadisticas = (
@@ -1235,10 +1600,12 @@ elif pagina == "🏆 Mi progreso":
                 estadisticas.keys()
             ):
 
-                porcentaje = (
-                    porcentaje_termino(
-                        termino
-                    )
+                datos = estadisticas[
+                    termino
+                ]
+
+                porcentaje = porcentaje_termino(
+                    termino
                 )
 
                 estado = dominio_termino(
@@ -1256,65 +1623,12 @@ elif pagina == "🏆 Mi progreso":
                     porcentaje / 100
                 )
 
-                datos = estadisticas[termino]
-
                 st.caption(
                     f"Intentos: {datos['intentos']} | "
                     f"Aciertos: {datos['aciertos']} | "
+                    f"Errores: {datos['errores']} | "
                     f"Precisión: {porcentaje:.0f}%"
                 )
-
-        st.divider()
-
-        # -------------------------------------------------
-        # INSIGNIAS
-        # -------------------------------------------------
-
-        st.subheader(
-            "🏅 Insignias"
-        )
-
-        insignia_obtenida = False
-
-        # Primera pregunta
-
-        if st.session_state.xp_total >= 10:
-
-            st.success(
-                "🐣 **Primer paso** — "
-                "Completaste tu primera pregunta."
-            )
-
-            insignia_obtenida = True
-
-        # Racha de 5
-
-        if st.session_state.racha_maxima >= 5:
-
-            st.success(
-                "🔥 **Racha de 5** — "
-                "Cinco respuestas correctas consecutivas."
-            )
-
-            insignia_obtenida = True
-
-        # 10 términos dominados
-
-        if contar_terminos_dominados() >= 10:
-
-            st.success(
-                "🧠 **Terminólogo** — "
-                "Dominaste 10 términos."
-            )
-
-            insignia_obtenida = True
-
-        if not insignia_obtenida:
-
-            st.caption(
-                "🎯 Sigue jugando para desbloquear "
-                "tus primeras insignias."
-            )
 
         st.divider()
 
@@ -1345,11 +1659,15 @@ elif pagina == "🏆 Mi progreso":
                 terminos_refuerzo
             ):
 
+                porcentaje = porcentaje_termino(
+                    termino
+                )
+
                 st.warning(
                     "📚 "
                     + termino
                     + " — "
-                    + f"{porcentaje_termino(termino):.0f}% de precisión"
+                    + f"{porcentaje:.0f}% de precisión"
                 )
 
         else:
@@ -1357,4 +1675,93 @@ elif pagina == "🏆 Mi progreso":
             st.success(
                 "🎉 No tienes términos "
                 "pendientes de refuerzo."
+            )
+
+        st.divider()
+
+        # -------------------------------------------------
+        # INSIGNIAS
+        # -------------------------------------------------
+
+        st.subheader(
+            "🏅 Insignias"
+        )
+
+        tiene_insignia = False
+
+        if st.session_state.xp_total >= 10:
+
+            st.success(
+                "🐣 **Primer paso** — "
+                "Completaste tu primera pregunta."
+            )
+
+            tiene_insignia = True
+
+        if st.session_state.racha_maxima >= 5:
+
+            st.success(
+                "🔥 **Racha de 5** — "
+                "Cinco respuestas correctas consecutivas."
+            )
+
+            tiene_insignia = True
+
+        if contar_terminos_dominados() >= 5:
+
+            st.success(
+                "🧠 **Terminólogo inicial** — "
+                "Dominaste 5 términos."
+            )
+
+            tiene_insignia = True
+
+        if contar_terminos_dominados() >= 10:
+
+            st.success(
+                "🏆 **Terminólogo** — "
+                "Dominaste 10 términos."
+            )
+
+            tiene_insignia = True
+
+        if not tiene_insignia:
+
+            st.caption(
+                "🎯 Sigue jugando para desbloquear "
+                "tus primeras insignias."
+            )
+
+        st.divider()
+
+        # -------------------------------------------------
+        # CÓMO FUNCIONA LA ADAPTACIÓN
+        # -------------------------------------------------
+
+        with st.expander(
+            "🧠 ¿Cómo decide VET-TERM qué preguntarte?"
+        ):
+
+            st.write(
+                """
+                VET-TERM analiza tu desempeño en cada
+                término.
+
+                🔴 Los términos con baja precisión
+                reciben mayor prioridad.
+
+                🟡 Los términos en progreso continúan
+                apareciendo para consolidar el aprendizaje.
+
+                🟢 Los términos dominados aparecen con
+                menor frecuencia.
+
+                ⚪ Los términos nuevos reciben una
+                prioridad intermedia para ampliar
+                progresivamente tu vocabulario.
+
+                De esta manera, las sesiones no son
+                completamente aleatorias: se adaptan
+                progresivamente al desempeño del estudiante.
+                """
             )
