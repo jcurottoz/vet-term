@@ -1069,22 +1069,11 @@ if pagina == "🏠 Inicio":
         )
 
 
-    # -----------------------------------------------------
-    # LOGO FACULTAD
-    # -----------------------------------------------------
+# -----------------------------------------------------
+# LOGO FACULTAD
+# -----------------------------------------------------
 
     with col_logo2:
-
-        logo_facultad = logo_sin_fondo(
-            "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM.jpeg"
-        )
-
-        st.image(
-            logo_facultad,
-            width=100
-        )
-
-    st.divider()
 
         logo_facultad = logo_sin_fondo(
             "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM.jpeg"
