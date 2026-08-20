@@ -1,5 +1,6 @@
 import streamlit as st
-import random
+import pandas as pd
+
 
 # =========================================================
 # CONFIGURACIÓN
@@ -11,193 +12,24 @@ st.set_page_config(
     layout="centered"
 )
 
+
 # =========================================================
-# BANCO DE PREGUNTAS
+# CARGAR BANCO DE PREGUNTAS
 # =========================================================
 
-BANCO_PREGUNTAS = [
+@st.cache_data
+def cargar_preguntas():
 
-    # -------------------------
-    # CONOCE
-    # -------------------------
+    datos = pd.read_csv(
+        "data/preguntas.csv",
+        sep="|",
+        encoding="utf-8"
+    )
 
-    {
-        "tipo": "CONOCE",
-        "pregunta": "¿Cuál es el término anatómico correcto para referirse a la extremidad posterior?",
-        "opciones": [
-            "Pata trasera",
-            "Miembro pélvico",
-            "Extremidad trasera",
-            "Pierna"
-        ],
-        "respuesta": "Miembro pélvico",
-        "explicacion": "En anatomía veterinaria, el término 'miembro pélvico' se utiliza para referirse a la extremidad posterior."
-    },
+    return datos
 
-    {
-        "tipo": "CONOCE",
-        "pregunta": "¿Qué término describe un aumento de la frecuencia respiratoria?",
-        "opciones": [
-            "Bradipnea",
-            "Apnea",
-            "Taquipnea",
-            "Eupnea"
-        ],
-        "respuesta": "Taquipnea",
-        "explicacion": "La taquipnea corresponde a un aumento de la frecuencia respiratoria."
-    },
 
-    {
-        "tipo": "CONOCE",
-        "pregunta": "¿Qué término describe la dificultad para respirar?",
-        "opciones": [
-            "Disnea",
-            "Taquipnea",
-            "Bradipnea",
-            "Eupnea"
-        ],
-        "respuesta": "Disnea",
-        "explicacion": "La disnea describe una respiración dificultosa."
-    },
-
-    {
-        "tipo": "CONOCE",
-        "pregunta": "¿Qué término indica una disminución de la frecuencia respiratoria?",
-        "opciones": [
-            "Taquipnea",
-            "Disnea",
-            "Bradipnea",
-            "Apnea"
-        ],
-        "respuesta": "Bradipnea",
-        "explicacion": "La bradipnea corresponde a una disminución de la frecuencia respiratoria."
-    },
-
-    {
-        "tipo": "CONOCE",
-        "pregunta": "¿Qué término significa ausencia de respiración?",
-        "opciones": [
-            "Apnea",
-            "Disnea",
-            "Eupnea",
-            "Ortopnea"
-        ],
-        "respuesta": "Apnea",
-        "explicacion": "La apnea corresponde a la ausencia de respiración."
-    },
-
-    # -------------------------
-    # IDENTIFICA
-    # -------------------------
-
-    {
-        "tipo": "IDENTIFICA",
-        "pregunta": "Un estudiante escribe en una historia clínica: 'El perro tiene una herida en la pata trasera'. ¿Qué término sería más apropiado?",
-        "opciones": [
-            "Miembro pélvico",
-            "Brazo",
-            "Pata posterior",
-            "Extremidad trasera"
-        ],
-        "respuesta": "Miembro pélvico",
-        "explicacion": "En una descripción anatómica formal se recomienda utilizar 'miembro pélvico' en lugar de expresiones coloquiales como 'pata trasera'."
-    },
-
-    {
-        "tipo": "IDENTIFICA",
-        "pregunta": "Un canino presenta una frecuencia respiratoria superior a la esperada para su condición. ¿Qué término describe el hallazgo?",
-        "opciones": [
-            "Bradipnea",
-            "Taquipnea",
-            "Apnea",
-            "Eupnea"
-        ],
-        "respuesta": "Taquipnea",
-        "explicacion": "El aumento de la frecuencia respiratoria se denomina taquipnea."
-    },
-
-    {
-        "tipo": "IDENTIFICA",
-        "pregunta": "El veterinario registra que el paciente presenta dificultad evidente durante la respiración. ¿Qué término debe utilizar?",
-        "opciones": [
-            "Eupnea",
-            "Bradipnea",
-            "Disnea",
-            "Apnea"
-        ],
-        "respuesta": "Disnea",
-        "explicacion": "La dificultad respiratoria se describe mediante el término disnea."
-    },
-
-    {
-        "tipo": "IDENTIFICA",
-        "pregunta": "¿Cuál de las siguientes expresiones utiliza una terminología anatómica más precisa?",
-        "opciones": [
-            "Pata delantera",
-            "Brazo del perro",
-            "Miembro torácico",
-            "Pata anterior"
-        ],
-        "respuesta": "Miembro torácico",
-        "explicacion": "En anatomía veterinaria, 'miembro torácico' es el término técnico apropiado."
-    },
-
-    # -------------------------
-    # APLICA
-    # -------------------------
-
-    {
-        "tipo": "APLICA",
-        "pregunta": "Durante el examen clínico de un canino, el estudiante observa respiración dificultosa. ¿Cómo debería registrar este hallazgo?",
-        "opciones": [
-            "El perro respira mal",
-            "Tiene problemas para respirar",
-            "Presenta disnea",
-            "Respira feo"
-        ],
-        "respuesta": "Presenta disnea",
-        "explicacion": "En una historia clínica se debe utilizar terminología médica precisa. 'Disnea' describe la dificultad respiratoria."
-    },
-
-    {
-        "tipo": "APLICA",
-        "pregunta": "Un paciente presenta disminución de la frecuencia respiratoria. ¿Cuál sería la descripción técnica adecuada?",
-        "opciones": [
-            "Respira lento",
-            "Presenta bradipnea",
-            "Respira poquito",
-            "Tiene respiración baja"
-        ],
-        "respuesta": "Presenta bradipnea",
-        "explicacion": "La disminución de la frecuencia respiratoria se denomina bradipnea."
-    },
-
-    {
-        "tipo": "APLICA",
-        "pregunta": "En una ficha clínica se describe una lesión localizada en la extremidad anterior derecha. ¿Cuál es la expresión anatómica más precisa?",
-        "opciones": [
-            "Pata derecha",
-            "Pata delantera derecha",
-            "Miembro torácico derecho",
-            "Brazo derecho"
-        ],
-        "respuesta": "Miembro torácico derecho",
-        "explicacion": "El término anatómico correcto es 'miembro torácico derecho'."
-    },
-
-    {
-        "tipo": "APLICA",
-        "pregunta": "Un estudiante escribe: 'El animal tiene una pata trasera lastimada'. ¿Cuál sería una redacción técnicamente más apropiada?",
-        "opciones": [
-            "El animal tiene una pata fea",
-            "Presenta lesión en el miembro pélvico",
-            "Tiene lastimada la pata",
-            "Tiene daño atrás"
-        ],
-        "respuesta": "Presenta lesión en el miembro pélvico",
-        "explicacion": "La expresión permite describir la localización utilizando terminología anatómica veterinaria."
-    }
-]
+preguntas = cargar_preguntas()
 
 
 # =========================================================
@@ -222,143 +54,312 @@ def obtener_nivel(xp):
         return "🧑‍⚕️ Veterinario en formación"
 
 
-def iniciar_sesion():
+def iniciar_sesion(nivel):
 
-    preguntas_sesion = random.sample(
-        BANCO_PREGUNTAS,
-        min(10, len(BANCO_PREGUNTAS))
-    )
+    banco = preguntas[
+        preguntas["nivel"] == nivel
+    ].copy()
 
-    st.session_state.preguntas_sesion = preguntas_sesion
+    cantidad = min(10, len(banco))
+
+    seleccion = banco.sample(
+        n=cantidad
+    ).to_dict("records")
+
+    st.session_state.preguntas_sesion = seleccion
     st.session_state.pregunta_actual = 0
     st.session_state.xp = 0
     st.session_state.racha = 0
     st.session_state.correctas = 0
     st.session_state.respondida = False
     st.session_state.finalizado = False
+    st.session_state.respuesta_actual = None
 
 
 # =========================================================
-# INICIALIZAR ESTADO
+# ESTADO INICIAL
 # =========================================================
 
 if "preguntas_sesion" not in st.session_state:
-    iniciar_sesion()
+
+    iniciar_sesion(1)
 
 
 # =========================================================
-# ENCABEZADO
+# MENÚ LATERAL
 # =========================================================
 
-st.title("🐾 VET-TERM")
+with st.sidebar:
 
-st.subheader(
-    "Aprende terminología médico-veterinaria jugando"
-)
+    st.title("🐾 VET-TERM")
 
-st.caption(
-    "Entrena tu lenguaje técnico desde los primeros ciclos."
-)
+    st.caption(
+        "Terminología médico-veterinaria"
+    )
 
+    st.divider()
 
-# =========================================================
-# ESTADÍSTICAS
-# =========================================================
+    pagina = st.radio(
+        "Navegación",
+        [
+            "🏠 Inicio",
+            "🎮 Jugar",
+            "📚 Banco de términos",
+            "🏆 Mi progreso"
+        ]
+    )
 
-col1, col2, col3 = st.columns(3)
+    st.divider()
 
-with col1:
     st.metric(
         "⭐ XP",
         st.session_state.xp
     )
 
-with col2:
     st.metric(
         "🔥 Racha",
         st.session_state.racha
     )
 
-with col3:
-    st.metric(
-        "🏆 Nivel",
-        obtener_nivel(st.session_state.xp)
-    )
-
-
-st.divider()
-
 
 # =========================================================
-# JUEGO
+# PÁGINA INICIO
 # =========================================================
 
-if not st.session_state.finalizado:
+if pagina == "🏠 Inicio":
 
-    numero = st.session_state.pregunta_actual
-
-    total = len(st.session_state.preguntas_sesion)
-
-    pregunta = st.session_state.preguntas_sesion[numero]
-
-    # PROGRESO
-
-    st.progress(
-        (numero + 1) / total
-    )
-
-    st.caption(
-        f"Pregunta {numero + 1} de {total}"
-    )
-
-    # TIPO DE PREGUNTA
-
-    tipo = pregunta["tipo"]
-
-    if tipo == "CONOCE":
-        st.info("🧠 CONOCE")
-
-    elif tipo == "IDENTIFICA":
-        st.warning("🔎 IDENTIFICA")
-
-    else:
-        st.success("🩺 APLICA")
-
-    # PREGUNTA
+    st.title("🐾 VET-TERM")
 
     st.header(
-        pregunta["pregunta"]
+        "Aprende terminología "
+        "médico-veterinaria jugando"
     )
 
-    # RESPUESTA
-
-    respuesta = st.radio(
-        "Selecciona una respuesta:",
-        pregunta["opciones"],
-        key=f"respuesta_{numero}",
-        disabled=st.session_state.respondida
+    st.write(
+        "Entrena tu lenguaje técnico "
+        "desde los primeros ciclos."
     )
 
-    # =====================================================
-    # COMPROBAR
-    # =====================================================
+    st.divider()
 
-    if not st.session_state.respondida:
+    col1, col2, col3 = st.columns(3)
 
-        if st.button(
-            "✅ Comprobar respuesta",
-            type="primary"
-        ):
+    with col1:
 
-            st.session_state.respondida = True
+        st.subheader("🧠 CONOCE")
 
-            if respuesta == pregunta["respuesta"]:
+        st.write(
+            "Aprende términos y conceptos."
+        )
 
-                st.session_state.xp += 10
+    with col2:
 
-                st.session_state.racha += 1
+        st.subheader("🔎 IDENTIFICA")
 
-                st.session_state.correctas += 1
+        st.write(
+            "Reconoce la terminología correcta."
+        )
+
+    with col3:
+
+        st.subheader("🩺 APLICA")
+
+        st.write(
+            "Utiliza los términos "
+            "en situaciones clínicas."
+        )
+
+    st.divider()
+
+    st.subheader("🚀 Tu objetivo")
+
+    st.write(
+        """
+        No se trata solamente de memorizar palabras.
+
+        VET-TERM busca que aprendas a utilizar
+        la terminología veterinaria de manera
+        precisa y profesional.
+        """
+    )
+
+    st.info(
+        "👉 Selecciona '🎮 Jugar' para comenzar."
+    )
+
+
+# =========================================================
+# PÁGINA JUGAR
+# =========================================================
+
+elif pagina == "🎮 Jugar":
+
+    st.title("🎮 Entrenamiento")
+
+    # -----------------------------------------------------
+    # SELECCIÓN DE NIVEL
+    # -----------------------------------------------------
+
+    niveles = sorted(
+        preguntas["nivel"].unique()
+    )
+
+    nombres_niveles = {
+
+        1: "🐣 Nivel 1 — Lenguaje veterinario básico",
+
+        2: "🐾 Nivel 2 — Anatomía veterinaria",
+
+        3: "🩺 Nivel 3 — Semiología"
+    }
+
+    opciones = [
+        nombres_niveles[n]
+        for n in niveles
+    ]
+
+    nivel_nombre = st.selectbox(
+        "Selecciona tu nivel:",
+        opciones
+    )
+
+    nivel = {
+        valor: clave
+        for clave, valor
+        in nombres_niveles.items()
+    }[nivel_nombre]
+
+    # -----------------------------------------------------
+    # NUEVA SESIÓN
+    # -----------------------------------------------------
+
+    if st.button(
+        "🎯 Nueva sesión"
+    ):
+
+        iniciar_sesion(nivel)
+
+        st.rerun()
+
+    st.divider()
+
+    # -----------------------------------------------------
+    # JUEGO
+    # -----------------------------------------------------
+
+    if not st.session_state.finalizado:
+
+        numero = (
+            st.session_state.pregunta_actual
+        )
+
+        total = len(
+            st.session_state.preguntas_sesion
+        )
+
+        pregunta = (
+            st.session_state
+            .preguntas_sesion[numero]
+        )
+
+        # PROGRESO
+
+        st.progress(
+            (numero + 1) / total
+        )
+
+        st.caption(
+            f"Pregunta {numero + 1} de {total}"
+        )
+
+        # TIPO DE PREGUNTA
+
+        tipo = pregunta["tipo"]
+
+        if tipo == "CONOCE":
+
+            st.info("🧠 CONOCE")
+
+        elif tipo == "IDENTIFICA":
+
+            st.warning("🔎 IDENTIFICA")
+
+        else:
+
+            st.success("🩺 APLICA")
+
+        # PREGUNTA
+
+        st.header(
+            pregunta["pregunta"]
+        )
+
+        opciones_respuesta = [
+
+            pregunta["opcion_a"],
+
+            pregunta["opcion_b"],
+
+            pregunta["opcion_c"],
+
+            pregunta["opcion_d"]
+        ]
+
+        respuesta = st.radio(
+            "Selecciona una respuesta:",
+            opciones_respuesta,
+            key=f"respuesta_{numero}",
+            disabled=st.session_state.respondida
+        )
+
+        # -------------------------------------------------
+        # COMPROBAR RESPUESTA
+        # -------------------------------------------------
+
+        if not st.session_state.respondida:
+
+            if st.button(
+                "✅ Comprobar respuesta",
+                type="primary"
+            ):
+
+                st.session_state.respuesta_actual = (
+                    respuesta
+                )
+
+                st.session_state.respondida = True
+
+                if (
+                    respuesta
+                    == pregunta["respuesta"]
+                ):
+
+                    st.session_state.xp += 10
+
+                    st.session_state.racha += 1
+
+                    st.session_state.correctas += 1
+
+                else:
+
+                    st.session_state.racha = 0
+
+                st.rerun()
+
+        # -------------------------------------------------
+        # RESULTADO
+        # -------------------------------------------------
+
+        else:
+
+            respuesta_usuario = (
+                st.session_state.respuesta_actual
+            )
+
+            if (
+                respuesta_usuario
+                == pregunta["respuesta"]
+            ):
 
                 st.success(
                     "🎉 ¡Correcto! +10 XP"
@@ -366,140 +367,266 @@ if not st.session_state.finalizado:
 
             else:
 
-                st.session_state.racha = 0
-
                 st.error(
                     "❌ Respuesta incorrecta"
                 )
 
+                st.write(
+                    f"Respuesta correcta: "
+                    f"**{pregunta['respuesta']}**"
+                )
+
             st.info(
-                "📚 " + pregunta["explicacion"]
+                "📚 "
+                + pregunta["explicacion"]
             )
 
-            st.rerun()
+            st.caption(
+                f"🏷️ Término: "
+                f"{pregunta['termino']} "
+                f"| 📚 Módulo: "
+                f"{pregunta['modulo']} "
+                f"| 🎯 Dificultad: "
+                f"{pregunta['dificultad']}"
+            )
 
-    # =====================================================
-    # RESULTADO
-    # =====================================================
+            st.divider()
+
+            if st.button(
+                "➡️ Siguiente pregunta",
+                type="primary"
+            ):
+
+                if numero + 1 >= total:
+
+                    st.session_state.finalizado = True
+
+                else:
+
+                    st.session_state.pregunta_actual += 1
+
+                    st.session_state.respondida = False
+
+                    st.session_state.respuesta_actual = None
+
+                st.rerun()
+
+    # -----------------------------------------------------
+    # SESIÓN FINALIZADA
+    # -----------------------------------------------------
 
     else:
 
-        # Mostrar resultado después del rerun
+        st.balloons()
 
-        if respuesta == pregunta["respuesta"]:
+        st.title(
+            "🎉 ¡Sesión completada!"
+        )
 
-            st.success(
-                "🎉 ¡Respuesta correcta! +10 XP"
+        total = len(
+            st.session_state.preguntas_sesion
+        )
+
+        correctas = (
+            st.session_state.correctas
+        )
+
+        porcentaje = (
+            correctas / total
+        ) * 100
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            st.metric(
+                "⭐ XP",
+                st.session_state.xp
+            )
+
+        with col2:
+
+            st.metric(
+                "✅ Correctas",
+                f"{correctas}/{total}"
+            )
+
+        with col3:
+
+            st.metric(
+                "📊 Rendimiento",
+                f"{porcentaje:.0f}%"
+            )
+
+        st.divider()
+
+        st.success(
+            obtener_nivel(
+                st.session_state.xp
+            )
+        )
+
+        if porcentaje >= 90:
+
+            st.write(
+                "🏅 Excelente dominio."
+            )
+
+        elif porcentaje >= 70:
+
+            st.write(
+                "👏 Buen trabajo. "
+                "Continúa practicando."
             )
 
         else:
 
-            st.error(
-                f"❌ La respuesta correcta es: "
-                f"**{pregunta['respuesta']}**"
+            st.write(
+                "📚 Necesitas reforzar "
+                "algunos conceptos."
             )
 
-        st.info(
-            "📚 " + pregunta["explicacion"]
-        )
-
-        st.divider()
-
-        # SIGUIENTE
-
         if st.button(
-            "➡️ Siguiente pregunta",
+            "🔄 Nueva sesión",
             type="primary"
         ):
 
-            if numero + 1 >= total:
-
-                st.session_state.finalizado = True
-
-            else:
-
-                st.session_state.pregunta_actual += 1
-                st.session_state.respondida = False
+            iniciar_sesion(
+                nivel
+            )
 
             st.rerun()
 
 
 # =========================================================
-# FINAL DE LA SESIÓN
+# BANCO DE TÉRMINOS
 # =========================================================
 
-else:
+elif pagina == "📚 Banco de términos":
 
-    st.balloons()
+    st.title("📚 Banco de términos")
 
-    st.title("🎉 ¡Sesión completada!")
-
-    total = len(
-        st.session_state.preguntas_sesion
+    st.write(
+        "Explora los conceptos incluidos "
+        "en VET-TERM."
     )
 
-    correctas = st.session_state.correctas
+    modulo = st.selectbox(
+        "Filtrar por módulo:",
+        [
+            "Todos"
+        ]
+        + sorted(
+            preguntas["modulo"].unique()
+        )
+    )
 
-    porcentaje = (
-        correctas / total
-    ) * 100
+    if modulo != "Todos":
+
+        banco = preguntas[
+            preguntas["modulo"] == modulo
+        ]
+
+    else:
+
+        banco = preguntas
+
+    for _, fila in banco.iterrows():
+
+        with st.expander(
+            f"🐾 {fila['termino']}"
+        ):
+
+            st.write(
+                f"**Módulo:** "
+                f"{fila['modulo']}"
+            )
+
+            st.write(
+                f"**Nivel:** "
+                f"{fila['nivel']}"
+            )
+
+            st.write(
+                f"**Categoría:** "
+                f"{fila['categoria']}"
+            )
+
+            st.write(
+                f"**Explicación:** "
+                f"{fila['explicacion']}"
+            )
+
+
+# =========================================================
+# PROGRESO
+# =========================================================
+
+elif pagina == "🏆 Mi progreso":
+
+    st.title("🏆 Mi progreso")
+
+    xp = st.session_state.xp
 
     st.subheader(
-        "🏆 Resultados"
+        obtener_nivel(xp)
     )
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
+
         st.metric(
             "⭐ XP",
-            st.session_state.xp
+            xp
         )
 
     with col2:
+
         st.metric(
-            "✅ Correctas",
-            f"{correctas}/{total}"
+            "🔥 Racha",
+            st.session_state.racha
         )
 
     with col3:
+
         st.metric(
-            "📊 Rendimiento",
-            f"{porcentaje:.0f}%"
+            "✅ Correctas",
+            st.session_state.correctas
         )
 
     st.divider()
 
-    st.success(
-        f"Tu nivel: **{obtener_nivel(st.session_state.xp)}**"
+    st.subheader(
+        "🎯 Próximo nivel"
     )
 
-    if porcentaje >= 90:
+    if xp < 50:
 
         st.write(
-            "🏅 ¡Excelente dominio de la terminología!"
+            f"Te faltan **{50 - xp} XP**."
         )
 
-    elif porcentaje >= 70:
+    elif xp < 150:
 
         st.write(
-            "👏 ¡Buen trabajo! Sigue practicando."
+            f"Te faltan **{150 - xp} XP**."
+        )
+
+    elif xp < 300:
+
+        st.write(
+            f"Te faltan **{300 - xp} XP**."
+        )
+
+    elif xp < 500:
+
+        st.write(
+            f"Te faltan **{500 - xp} XP**."
         )
 
     else:
 
-        st.write(
-            "📚 Necesitas seguir entrenando. "
-            "La práctica te ayudará a mejorar."
+        st.success(
+            "🏆 ¡Nivel máximo alcanzado!"
         )
-
-    st.divider()
-
-    if st.button(
-        "🔄 Nueva sesión",
-        type="primary"
-    ):
-
-        iniciar_sesion()
-
-        st.rerun()
