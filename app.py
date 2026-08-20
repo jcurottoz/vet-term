@@ -968,11 +968,48 @@ with st.sidebar:
     )
 
 
+# =====================================================
+# FUNCIÓN PARA QUITAR FONDO DE LOS LOGOS
+# =====================================================
+
+def logo_sin_fondo(ruta):
+
+    imagen = Image.open(ruta).convert("RGBA")
+
+    pixeles = imagen.load()
+
+    for y in range(imagen.height):
+
+        for x in range(imagen.width):
+
+            r, g, b, a = pixeles[x, y]
+
+            if r > 235 and g > 235 and b > 235:
+
+                pixeles[x, y] = (
+                    255,
+                    255,
+                    255,
+                    0
+                )
+
+    return imagen
+
+
 # =========================================================
 # 🏠 INICIO
 # =========================================================
 
 if pagina == "🏠 Inicio":
+
+    # =====================================================
+    # IDENTIDAD INSTITUCIONAL
+    # =====================================================
+
+    col_logo1, col_titulo, col_logo2 = st.columns(
+        [1, 3, 1],
+        vertical_alignment="center"
+    )
 # =====================================================
 # IDENTIDAD INSTITUCIONAL
 # =====================================================
