@@ -2,6 +2,28 @@ import streamlit as st
 import pandas as pd
 import random
 from supabase import create_client
+from PIL import Image
+def logo_sin_fondo(ruta):
+
+    imagen = Image.open(ruta).convert("RGBA")
+
+    pixeles = imagen.load()
+
+    for y in range(imagen.height):
+        for x in range(imagen.width):
+
+            r, g, b, a = pixeles[x, y]
+
+            if r > 235 and g > 235 and b > 235:
+
+                pixeles[x, y] = (
+                    255,
+                    255,
+                    255,
+                    0
+                )
+
+    return imagen
 # =========================================================
 # AUTENTICACIÓN
 # =========================================================
@@ -954,9 +976,6 @@ if pagina == "🏠 Inicio":
 # =====================================================
 # IDENTIDAD INSTITUCIONAL
 # =====================================================
-
-from PIL import Image
-
 
 def logo_sin_fondo(ruta):
 
