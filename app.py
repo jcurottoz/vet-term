@@ -775,7 +775,7 @@ with st.sidebar:
     "Development | Facultad de Medicina Veterinaria y Zootecnia"
     )
 
-st.caption(
+    st.caption(
     "Universidad Nacional San Luis Gonzaga"
     )
 
