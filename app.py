@@ -1032,45 +1032,44 @@ def logo_sin_fondo(ruta):
     return imagen
 
 
-col_logo1, col_titulo, col_logo2 = st.columns(
-    [1, 3, 1],
-    vertical_alignment="center"
-)
-
-
-# -----------------------------------------------------
-# LOGO UNIVERSIDAD
-# -----------------------------------------------------
-
-with col_logo1:
-
-    logo_unica = logo_sin_fondo(
-        "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM (1).jpeg"
+    col_logo1, col_titulo, col_logo2 = st.columns(
+        [1, 4, 1],
+        vertical_alignment="center"
     )
 
-    st.image(
-        logo_unica,
-        width=120
-    )
+    # -----------------------------------------------------
+    # LOGO UNIVERSIDAD
+    # -----------------------------------------------------
+
+    with col_logo1:
+
+        logo_unica = logo_sin_fondo(
+            "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM (1).jpeg"
+        )
+
+        st.image(
+            logo_unica,
+            width=100
+        )
 
 
-# -----------------------------------------------------
-# TÍTULO CENTRAL
-# -----------------------------------------------------
+    # -----------------------------------------------------
+    # TÍTULO CENTRAL
+    # -----------------------------------------------------
 
     with col_titulo:
 
         st.markdown(
-            "<div style='text-align:center; padding-top:10px;'>"
-            "<h1 style='margin-bottom:5px; "
+            "<div style='text-align:center; padding:20px 0;'>"
+            "<h1 style='margin:0; "
             "color:#8B1E2D; font-size:42px;'>"
             "🐾 VET-TERM"
             "</h1>"
-            "<h3 style='margin-top:0; "
+            "<h3 style='margin:12px 0 0 0; "
             "color:#333333; font-weight:500;'>"
             "Aprende terminología médico-veterinaria jugando"
             "</h3>"
-            "<p style='margin-top:10px; "
+            "<p style='margin-top:14px; "
             "color:#555555; font-size:16px;'>"
             "Facultad de Medicina Veterinaria y Zootecnia<br>"
             "Universidad Nacional San Luis Gonzaga"
@@ -1079,15 +1078,21 @@ with col_logo1:
             unsafe_allow_html=True
         )
 
-    logo_facultad = logo_sin_fondo(
-        "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM.jpeg"
-    )
 
-    st.image(
-        logo_facultad,
-        width=120
-    )
+    # -----------------------------------------------------
+    # LOGO FACULTAD
+    # -----------------------------------------------------
 
+    with col_logo2:
+
+        logo_facultad = logo_sin_fondo(
+            "assets/WhatsApp Image 2026-06-29 at 1.07.15 PM.jpeg"
+        )
+
+        st.image(
+            logo_facultad,
+            width=100
+        )
 st.divider()
 # -----------------------------------------------------
 # ACCESO DEL ESTUDIANTE
