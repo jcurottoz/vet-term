@@ -1212,29 +1212,7 @@ elif pagina == "🎮 Jugar":
                         st.session_state.racha_maxima = (
                             st.session_state.racha
                         )
-                    # -----------------------------------------
-                    # GUARDAR XP EN SUPABASE
-                    # -----------------------------------------
-
-                    try:
-
-                        supabase.table(
-                            "estudiantes"
-                        ).update({
-
-                            "xp": st.session_state.xp_total
-
-                        }).eq(
-                            "id",
-                            st.session_state.estudiante_id
-                        ).execute()
-
-                    except Exception as e:
-
-                        st.warning(
-                            "No se pudo actualizar el XP: "
-                            + str(e)
-                        )
+               
                 # -----------------------------------------
                 # INCORRECTA
                 # -----------------------------------------
