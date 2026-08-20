@@ -1005,10 +1005,10 @@ if pagina == "🏠 Inicio":
     # IDENTIDAD INSTITUCIONAL
     # =====================================================
 
-col_logo1, col_titulo, col_logo2 = st.columns(
-    [1.2, 4, 1.2],
-    vertical_alignment="center"
-)
+    col_logo1, col_titulo, col_logo2 = st.columns(
+        [1.2, 4, 1.2],
+        vertical_alignment="center"
+    )
 
     # -----------------------------------------------------
     # LOGO UNIVERSIDAD
@@ -1031,6 +1031,11 @@ col_logo1, col_titulo, col_logo2 = st.columns(
 
     with col_titulo:
 
+        st.markdown(
+            "<div style='text-align:center;'>",
+            unsafe_allow_html=True
+        )
+
         st.title("🐾 VET-TERM")
 
         st.subheader(
@@ -1044,9 +1049,15 @@ col_logo1, col_titulo, col_logo2 = st.columns(
         st.write(
             "Universidad Nacional San Luis Gonzaga"
         )
-# -----------------------------------------------------
-# LOGO FACULTAD
-# -----------------------------------------------------
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
+    # -----------------------------------------------------
+    # LOGO FACULTAD
+    # -----------------------------------------------------
 
     with col_logo2:
 
@@ -1059,6 +1070,7 @@ col_logo1, col_titulo, col_logo2 = st.columns(
             width=100
         )
 
+    st.divider()
     st.divider()
 # -----------------------------------------------------
 # ACCESO DEL ESTUDIANTE
